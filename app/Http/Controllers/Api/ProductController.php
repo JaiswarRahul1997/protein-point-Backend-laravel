@@ -12,6 +12,7 @@ class ProductController extends Controller
     public function index(Request $request): JsonResponse
     {
         $type = $request->query('type');
+        $section = trim((string) $request->query('section', ''));
         $limit = min((int) $request->query('limit', 24), 100);
         $search = trim((string) $request->query('q', ''));
 
@@ -31,7 +32,15 @@ class ProductController extends Controller
                         ->orWhere('sku', 'ilike', "%{$search}%");
                 });
             })
-            ->latest('updated_at')
+            ->when($section === 'trending', function ($q) {
+                $q->orderByDesc('quantity')->orderByDesc('updated_at');
+            })
+            ->when($section === 'discount', function ($q) {
+                $q->where('price', '>', 0)->orderBy('price')->orderByDesc('updated_at');
+            })
+            ->when(! in_array($section, ['trending', 'discount'], true), function ($q) {
+                $q->latest('updated_at');
+            })
             ->paginate($limit);
 
         return response()->json([
@@ -41,6 +50,7 @@ class ProductController extends Controller
                 'last_page' => $products->lastPage(),
                 'per_page' => $products->perPage(),
                 'total' => $products->total(),
+                'section' => $section !== '' ? $section : null,
             ],
         ]);
     }

@@ -5,6 +5,7 @@ use Admin\Http\Controllers\BannerController;
 use Admin\Http\Controllers\CategoryController;
 use Admin\Http\Controllers\DashboardController;
 use Admin\Http\Controllers\MediaController;
+use Admin\Http\Controllers\MenuController;
 use Admin\Http\Controllers\OrderController;
 use Admin\Http\Controllers\ProductController;
 use Admin\Http\Middleware\EnsureAdminAccess;
@@ -46,6 +47,13 @@ Route::middleware(EnsureAdminAccess::class)->group(function () {
     Route::get('banners/{banner}/edit', [BannerController::class, 'edit'])->name('admin.banners.edit');
     Route::put('banners/{banner}', [BannerController::class, 'update'])->name('admin.banners.update');
     Route::delete('banners/{banner}', [BannerController::class, 'destroy'])->name('admin.banners.destroy');
+
+    Route::get('menus', [MenuController::class, 'index'])->name('admin.menus.index');
+    Route::get('menus/create', [MenuController::class, 'create'])->name('admin.menus.create');
+    Route::post('menus', [MenuController::class, 'store'])->name('admin.menus.store');
+    Route::get('menus/{menu}/edit', [MenuController::class, 'edit'])->name('admin.menus.edit');
+    Route::put('menus/{menu}', [MenuController::class, 'update'])->name('admin.menus.update');
+    Route::delete('menus/{menu}', [MenuController::class, 'destroy'])->name('admin.menus.destroy');
 
     Route::get('orders', [OrderController::class, 'index'])->name('admin.orders.index');
     Route::get('orders/{order}', [OrderController::class, 'show'])->name('admin.orders.show');

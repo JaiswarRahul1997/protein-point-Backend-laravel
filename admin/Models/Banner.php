@@ -8,9 +8,15 @@ use Illuminate\Database\Eloquent\Model;
 class Banner extends Model
 {
     public const SLOTS = [
-        'left' => 'Main — Large (Left)',
-        'center' => 'Side — Top (Right)',
-        'right' => 'Side — Bottom (Right)',
+        'left' => 'Main — Large (Left) · 900×510',
+        'center' => 'Side — Top (Right) · 450×251',
+        'right' => 'Side — Bottom (Right) · 450×251',
+    ];
+
+    public const DIMENSIONS = [
+        'left' => ['width' => 900, 'height' => 510],
+        'center' => ['width' => 450, 'height' => 251],
+        'right' => ['width' => 450, 'height' => 251],
     ];
 
     public const STATUSES = [

@@ -6,7 +6,7 @@
     <header class="page-header">
         <div>
             <h1 class="page-title">{{ $mode === 'create' ? 'Add Banner' : 'Edit Banner' }}</h1>
-            <p class="page-lead">Upload an image and assign it to a homepage banner slot.</p>
+            <p class="page-lead">Upload an image sized for the selected slot (Main 900×510, Side 450×251).</p>
         </div>
         <a class="btn btn-outline" href="{{ route('admin.banners.index') }}">Back</a>
     </header>
@@ -89,7 +89,12 @@
                         accept=".jpg,.jpeg,.png,.webp,.gif,image/jpeg,image/png,image/webp,image/gif"
                         {{ $mode === 'create' && ! $banner->imageUrl() ? 'required' : '' }}
                     >
-                    <p class="form-hint">Layout: one large banner on the left, two stacked small banners on the right. Recommended: main ~1200×600, side ~600×300. JPG/JPEG/PNG/WEBP/GIF · Max 5MB. Click × on the preview to remove the image.</p>
+                    <p class="form-hint">
+                        Upload size by slot:
+                        Main (Left) <strong>900×510</strong>,
+                        Side Top / Bottom (Right) <strong>450×251</strong>.
+                        JPG/JPEG/PNG/WEBP/GIF · Max 5MB. Click × on the preview to remove the image.
+                    </p>
                     @error('image_file')<p class="form-error">{{ $message }}</p>@enderror
                 </div>
             </div>

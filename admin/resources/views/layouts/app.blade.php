@@ -545,6 +545,7 @@
     $productTypes = \Admin\Models\Product::TYPES;
     $categoriesActive = request()->routeIs('admin.categories.*');
     $bannersActive = request()->routeIs('admin.banners.*');
+    $menusActive = request()->routeIs('admin.menus.*');
     $ordersActive = request()->routeIs('admin.orders.*');
 @endphp
 <div class="shell">
@@ -610,6 +611,24 @@
                 <ul class="nav-sub" id="banners-submenu">
                     <li>
                         <a href="{{ route('admin.banners.index') }}" class="nav-link {{ $bannersActive ? 'active' : '' }}">Homepage Banners</a>
+                    </li>
+                </ul>
+            </div>
+
+            <div class="nav-group" data-nav-group>
+                <button
+                    type="button"
+                    class="nav-group-title"
+                    aria-expanded="false"
+                    aria-controls="menus-submenu"
+                    data-nav-toggle
+                >
+                    <span>Menus</span>
+                    <span class="nav-chevron" aria-hidden="true"></span>
+                </button>
+                <ul class="nav-sub" id="menus-submenu">
+                    <li>
+                        <a href="{{ route('admin.menus.index') }}" class="nav-link {{ $menusActive ? 'active' : '' }}">All Menu Items</a>
                     </li>
                 </ul>
             </div>

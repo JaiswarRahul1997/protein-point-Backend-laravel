@@ -6,7 +6,7 @@
     <header class="page-header">
         <div>
             <h1 class="page-title">Homepage Banners</h1>
-            <p class="page-lead">Manage homepage banners: large left + two stacked right banners.</p>
+            <p class="page-lead">Homepage layout: Main 900×510 (left) + two Side banners 450×251 (right).</p>
         </div>
         <a class="btn" href="{{ route('admin.banners.create') }}">Add Banner</a>
     </header>
