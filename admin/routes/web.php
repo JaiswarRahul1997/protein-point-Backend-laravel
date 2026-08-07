@@ -1,9 +1,11 @@
 <?php
 
 use Admin\Http\Controllers\AuthController;
+use Admin\Http\Controllers\BannerController;
 use Admin\Http\Controllers\CategoryController;
 use Admin\Http\Controllers\DashboardController;
 use Admin\Http\Controllers\MediaController;
+use Admin\Http\Controllers\OrderController;
 use Admin\Http\Controllers\ProductController;
 use Admin\Http\Middleware\EnsureAdminAccess;
 use Illuminate\Support\Facades\Route;
@@ -37,4 +39,15 @@ Route::middleware(EnsureAdminAccess::class)->group(function () {
     Route::get('categories/{category}/edit', [CategoryController::class, 'edit'])->name('admin.categories.edit');
     Route::put('categories/{category}', [CategoryController::class, 'update'])->name('admin.categories.update');
     Route::delete('categories/{category}', [CategoryController::class, 'destroy'])->name('admin.categories.destroy');
+
+    Route::get('banners', [BannerController::class, 'index'])->name('admin.banners.index');
+    Route::get('banners/create', [BannerController::class, 'create'])->name('admin.banners.create');
+    Route::post('banners', [BannerController::class, 'store'])->name('admin.banners.store');
+    Route::get('banners/{banner}/edit', [BannerController::class, 'edit'])->name('admin.banners.edit');
+    Route::put('banners/{banner}', [BannerController::class, 'update'])->name('admin.banners.update');
+    Route::delete('banners/{banner}', [BannerController::class, 'destroy'])->name('admin.banners.destroy');
+
+    Route::get('orders', [OrderController::class, 'index'])->name('admin.orders.index');
+    Route::get('orders/{order}', [OrderController::class, 'show'])->name('admin.orders.show');
+    Route::put('orders/{order}/status', [OrderController::class, 'updateStatus'])->name('admin.orders.status');
 });

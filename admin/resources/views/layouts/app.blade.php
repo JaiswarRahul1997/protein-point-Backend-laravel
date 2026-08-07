@@ -361,6 +361,7 @@
         }
 
         .media-item {
+            position: relative;
             display: flex;
             flex-direction: column;
             gap: 0.5rem;
@@ -377,10 +378,42 @@
             object-fit: cover;
             border-radius: 4px;
             background: var(--surface);
+            display: block;
+        }
+
+        .media-item-banner img {
+            aspect-ratio: 16 / 9;
         }
 
         .media-item-video video {
             aspect-ratio: 16 / 9;
+        }
+
+        .media-remove-btn {
+            position: absolute;
+            top: 0.35rem;
+            right: 0.35rem;
+            z-index: 2;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 1.75rem;
+            height: 1.75rem;
+            padding: 0;
+            border: 1px solid var(--border);
+            border-radius: 999px;
+            background: var(--white);
+            color: var(--black);
+            font-size: 1.15rem;
+            line-height: 1;
+            cursor: pointer;
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12);
+        }
+
+        .media-remove-btn:hover {
+            background: var(--black);
+            color: var(--white);
+            border-color: var(--black);
         }
 
         .actions {
@@ -511,6 +544,8 @@
 @php
     $productTypes = \Admin\Models\Product::TYPES;
     $categoriesActive = request()->routeIs('admin.categories.*');
+    $bannersActive = request()->routeIs('admin.banners.*');
+    $ordersActive = request()->routeIs('admin.orders.*');
 @endphp
 <div class="shell">
     <aside>
@@ -557,6 +592,42 @@
                 <ul class="nav-sub" id="categories-submenu">
                     <li>
                         <a href="{{ route('admin.categories.index') }}" class="nav-link {{ $categoriesActive ? 'active' : '' }}">All Categories</a>
+                    </li>
+                </ul>
+            </div>
+
+            <div class="nav-group" data-nav-group>
+                <button
+                    type="button"
+                    class="nav-group-title"
+                    aria-expanded="false"
+                    aria-controls="banners-submenu"
+                    data-nav-toggle
+                >
+                    <span>Banners</span>
+                    <span class="nav-chevron" aria-hidden="true"></span>
+                </button>
+                <ul class="nav-sub" id="banners-submenu">
+                    <li>
+                        <a href="{{ route('admin.banners.index') }}" class="nav-link {{ $bannersActive ? 'active' : '' }}">Homepage Banners</a>
+                    </li>
+                </ul>
+            </div>
+
+            <div class="nav-group" data-nav-group>
+                <button
+                    type="button"
+                    class="nav-group-title"
+                    aria-expanded="false"
+                    aria-controls="orders-submenu"
+                    data-nav-toggle
+                >
+                    <span>Orders</span>
+                    <span class="nav-chevron" aria-hidden="true"></span>
+                </button>
+                <ul class="nav-sub" id="orders-submenu">
+                    <li>
+                        <a href="{{ route('admin.orders.index') }}" class="nav-link {{ $ordersActive ? 'active' : '' }}">All Orders</a>
                     </li>
                 </ul>
             </div>
