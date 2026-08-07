@@ -3,6 +3,7 @@
 namespace Admin\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Hash;
 
 class AdminUser extends Model
 {
@@ -18,4 +19,9 @@ class AdminUser extends Model
         'password',
         'remember_token',
     ];
+
+    public function setPasswordAttribute(string $value): void
+    {
+        $this->attributes['password'] = Hash::make($value);
+    }
 }

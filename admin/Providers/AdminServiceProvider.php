@@ -14,10 +14,16 @@ class AdminServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        if ($this->app->runningInConsole()) {
+            $this->commands([
+                \Admin\Console\Commands\SeedAdminProductsCommand::class,
+            ]);
+        }
+
         $this->loadViewsFrom(base_path('admin/resources/views'), 'admin');
         $this->loadMigrationsFrom(base_path('admin/database/migrations'));
 
-        Route::middleware(['web', \Admin\Http\Middleware\EnsureAdminAccess::class])
+        Route::middleware(['web'])
             ->prefix('admin')
             ->group(base_path('admin/routes/web.php'));
     }

@@ -10,7 +10,10 @@ class EnsureAdminAccess
 {
     public function handle(Request $request, Closure $next): Response
     {
-        // Placeholder for admin authentication / authorization.
+        if (! $request->session()->has('admin_id')) {
+            return redirect()->guest(route('admin.login'));
+        }
+
         return $next($request);
     }
 }

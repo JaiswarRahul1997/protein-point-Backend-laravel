@@ -5,28 +5,592 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>@yield('title', 'Admin') — Protein Point</title>
     <style>
-        :root { --bg: #0f1412; --panel: #1a2420; --accent: #7dcea0; --text: #e8f0eb; --muted: #9bb5a8; }
+        :root {
+            --white: #ffffff;
+            --black: #000000;
+            --border: #e5e5e5;
+            --surface: #fafafa;
+            --sidebar-width: 260px;
+            --space-1: 0.5rem;
+            --space-2: 0.75rem;
+            --space-3: 1rem;
+            --space-4: 1.5rem;
+            --space-5: 2rem;
+            --radius: 8px;
+        }
+
         * { box-sizing: border-box; }
-        body { margin: 0; font-family: "Segoe UI", system-ui, sans-serif; background: var(--bg); color: var(--text); }
-        .shell { display: grid; grid-template-columns: 220px 1fr; min-height: 100vh; }
-        aside { background: var(--panel); padding: 1.5rem 1rem; border-right: 1px solid #24332c; }
-        aside .brand { font-weight: 700; color: var(--accent); margin-bottom: 1.5rem; }
-        aside a { display: block; color: var(--muted); text-decoration: none; padding: 0.5rem 0.75rem; border-radius: 6px; margin-bottom: 0.25rem; }
-        aside a:hover, aside a.active { background: #24332c; color: var(--text); }
-        main { padding: 2rem; }
-        h1 { margin: 0 0 0.5rem; font-size: 1.75rem; }
-        .muted { color: var(--muted); }
+
+        body {
+            margin: 0;
+            font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+            background: var(--white);
+            color: var(--black);
+            -webkit-font-smoothing: antialiased;
+            line-height: 1.5;
+        }
+
+        .shell {
+            display: grid;
+            grid-template-columns: var(--sidebar-width) 1fr;
+            min-height: 100vh;
+        }
+
+        aside {
+            background: var(--white);
+            padding: var(--space-5) var(--space-3);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .brand {
+            font-weight: 700;
+            font-size: 0.95rem;
+            letter-spacing: -0.01em;
+            color: var(--black);
+            margin-bottom: var(--space-5);
+            padding: 0 var(--space-2);
+        }
+
+        .nav-label {
+            margin: var(--space-4) 0 var(--space-2);
+            padding: 0 var(--space-2);
+            font-size: 0.7rem;
+            font-weight: 600;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--black);
+        }
+
+        .nav-label:first-of-type {
+            margin-top: 0;
+        }
+
+        .nav-link {
+            display: block;
+            color: var(--black);
+            text-decoration: none;
+            padding: 0.625rem var(--space-2);
+            border-radius: var(--radius);
+            margin-bottom: 0.2rem;
+            font-size: 0.95rem;
+            transition: background-color 0.15s ease;
+        }
+
+        .nav-link:hover,
+        .nav-link.active {
+            background: var(--surface);
+        }
+
+        .nav-group {
+            margin-bottom: var(--space-2);
+        }
+
+        .nav-group-title {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+            padding: 0.625rem var(--space-2);
+            border: 0;
+            border-radius: var(--radius);
+            background: transparent;
+            font: inherit;
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: var(--black);
+            text-align: left;
+            cursor: pointer;
+        }
+
+        .nav-group-title:hover {
+            background: var(--surface);
+        }
+
+        .nav-group-title .nav-chevron {
+            display: inline-block;
+            width: 0.45rem;
+            height: 0.45rem;
+            border-right: 2px solid var(--black);
+            border-bottom: 2px solid var(--black);
+            transform: rotate(-45deg);
+            transition: transform 0.15s ease;
+        }
+
+        .nav-group.is-open .nav-group-title .nav-chevron {
+            transform: rotate(45deg);
+        }
+
+        .nav-sub {
+            display: none;
+            margin: 0;
+            padding: 0 0 0 var(--space-3);
+            list-style: none;
+        }
+
+        .nav-group.is-open .nav-sub {
+            display: block;
+        }
+
+        .nav-sub .nav-link {
+            font-size: 0.875rem;
+            font-weight: 400;
+        }
+
+        main {
+            padding: var(--space-5);
+            background: var(--white);
+            overflow-x: auto;
+        }
+
+        .content {
+            max-width: 1400px;
+        }
+
+        .page-header {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: flex-end;
+            justify-content: space-between;
+            gap: var(--space-3);
+            margin-bottom: var(--space-5);
+            padding-bottom: var(--space-4);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .page-title {
+            margin: 0 0 var(--space-1);
+            font-size: 1.875rem;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            color: var(--black);
+        }
+
+        .page-lead {
+            margin: 0;
+            font-size: 0.95rem;
+            color: var(--black);
+        }
+
+        .section {
+            margin-bottom: var(--space-5);
+        }
+
+        .section-title {
+            margin: 0 0 var(--space-3);
+            font-size: 0.75rem;
+            font-weight: 600;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--black);
+        }
+
+        .stat-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: var(--space-3);
+        }
+
+        .stat-card {
+            background: var(--white);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: var(--space-4);
+        }
+
+        .stat-label {
+            display: block;
+            margin-bottom: var(--space-2);
+            font-size: 0.8rem;
+            font-weight: 600;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            color: var(--black);
+        }
+
+        .stat-value {
+            display: block;
+            font-size: 2rem;
+            font-weight: 700;
+            line-height: 1;
+            letter-spacing: -0.03em;
+            color: var(--black);
+        }
+
+        .sidebar-footer {
+            margin-top: auto;
+            padding-top: var(--space-4);
+            border-top: 1px solid var(--border);
+        }
+
+        .user-name {
+            margin: 0 0 var(--space-3);
+            padding: 0 var(--space-2);
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--black);
+        }
+
+        .logout-form {
+            margin: 0;
+            padding: 0 var(--space-2);
+        }
+
+        .logout-btn {
+            width: 100%;
+            padding: 0.625rem var(--space-2);
+            border: 1px solid var(--black);
+            border-radius: var(--radius);
+            background: var(--white);
+            color: var(--black);
+            font: inherit;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .logout-btn:hover {
+            background: var(--black);
+            color: var(--white);
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 0.625rem 1rem;
+            border: 1px solid var(--black);
+            border-radius: var(--radius);
+            background: var(--black);
+            color: var(--white);
+            font: inherit;
+            font-size: 0.9rem;
+            font-weight: 600;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        .btn:hover {
+            background: var(--white);
+            color: var(--black);
+        }
+
+        .btn-outline {
+            background: var(--white);
+            color: var(--black);
+        }
+
+        .btn-outline:hover {
+            background: var(--black);
+            color: var(--white);
+        }
+
+        .btn-sm {
+            padding: 0.35rem 0.65rem;
+            font-size: 0.8rem;
+        }
+
+        .alert {
+            margin-bottom: var(--space-4);
+            padding: 0.75rem 1rem;
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            background: var(--surface);
+            font-size: 0.9rem;
+        }
+
+        .table-wrap {
+            overflow-x: auto;
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+        }
+
+        table.data-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+            white-space: nowrap;
+        }
+
+        table.data-table th,
+        table.data-table td {
+            padding: 0.75rem 0.85rem;
+            border-bottom: 1px solid var(--border);
+            text-align: left;
+            vertical-align: middle;
+        }
+
+        table.data-table th {
+            background: var(--surface);
+            font-size: 0.75rem;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+        }
+
+        table.data-table tr:last-child td {
+            border-bottom: 0;
+        }
+
+        .thumb {
+            width: 40px;
+            height: 40px;
+            object-fit: cover;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            background: var(--surface);
+            display: block;
+        }
+
+        .thumb-placeholder {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            background: var(--surface);
+            font-size: 0.65rem;
+            color: var(--black);
+        }
+
+        .media-preview {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            gap: var(--space-3);
+        }
+
+        .media-item {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            padding: 0.5rem;
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            background: var(--white);
+        }
+
+        .media-item img,
+        .media-item video {
+            width: 100%;
+            aspect-ratio: 1;
+            object-fit: cover;
+            border-radius: 4px;
+            background: var(--surface);
+        }
+
+        .media-item-video video {
+            aspect-ratio: 16 / 9;
+        }
+
+        .actions {
+            display: flex;
+            gap: 0.4rem;
+            align-items: center;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: var(--space-3) var(--space-4);
+        }
+
+        .form-grid .full {
+            grid-column: 1 / -1;
+        }
+
+        .form-field {
+            margin-bottom: 0;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 0.375rem;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--black);
+        }
+
+        .form-input,
+        .form-select,
+        .form-textarea {
+            width: 100%;
+            padding: 0.625rem 0.75rem;
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            font: inherit;
+            color: var(--black);
+            background: var(--white);
+        }
+
+        .form-textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+
+        .form-input:focus,
+        .form-select:focus,
+        .form-textarea:focus {
+            outline: none;
+            border-color: var(--black);
+        }
+
+        .form-error {
+            margin: 0.375rem 0 0;
+            font-size: 0.85rem;
+        }
+
+        .form-hint {
+            margin: 0.375rem 0 0;
+            font-size: 0.8rem;
+            color: var(--black);
+            opacity: 0.7;
+        }
+
+        .form-panel {
+            margin-bottom: var(--space-5);
+            padding: var(--space-4);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+        }
+
+        .checkbox-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 0.5rem;
+        }
+
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.9rem;
+        }
+
+        .form-actions {
+            display: flex;
+            gap: var(--space-2);
+            margin-top: var(--space-4);
+        }
+
+        .empty-state {
+            padding: var(--space-5);
+            border: 1px dashed var(--border);
+            border-radius: var(--radius);
+            text-align: center;
+        }
+
+        .pagination {
+            margin-top: var(--space-4);
+        }
+
+        @media (max-width: 900px) {
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .shell {
+                grid-template-columns: 1fr;
+            }
+
+            aside {
+                border-right: 0;
+                border-bottom: 1px solid var(--border);
+                padding: var(--space-4) var(--space-3);
+            }
+
+            main {
+                padding: var(--space-4) var(--space-3);
+            }
+        }
     </style>
 </head>
 <body>
+@php
+    $productTypes = \Admin\Models\Product::TYPES;
+    $categoriesActive = request()->routeIs('admin.categories.*');
+@endphp
 <div class="shell">
     <aside>
         <div class="brand">Protein Point · Admin</div>
-        <a href="{{ route('admin.dashboard') }}" class="active">Dashboard</a>
+
+        <p class="nav-label">Menu</p>
+        <nav aria-label="Admin navigation">
+            <a href="{{ route('admin.dashboard') }}" class="nav-link {{ request()->routeIs('admin.dashboard') ? 'active' : '' }}">Dashboard</a>
+
+            <div class="nav-group" data-nav-group>
+                <button
+                    type="button"
+                    class="nav-group-title"
+                    aria-expanded="false"
+                    aria-controls="products-submenu"
+                    data-nav-toggle
+                >
+                    <span>Products</span>
+                    <span class="nav-chevron" aria-hidden="true"></span>
+                </button>
+                <ul class="nav-sub" id="products-submenu">
+                    <li>
+                        <a href="{{ route('admin.products.index') }}" class="nav-link {{ request()->routeIs('admin.products.index') && request()->route('type') === null ? 'active' : '' }}">All Products</a>
+                    </li>
+                    @foreach ($productTypes as $slug => $label)
+                        <li>
+                            <a href="{{ route('admin.products.index', ['type' => $slug]) }}" class="nav-link {{ request()->route('type') === $slug ? 'active' : '' }}">{{ $label }}</a>
+                        </li>
+                    @endforeach
+                </ul>
+            </div>
+
+            <div class="nav-group" data-nav-group>
+                <button
+                    type="button"
+                    class="nav-group-title"
+                    aria-expanded="false"
+                    aria-controls="categories-submenu"
+                    data-nav-toggle
+                >
+                    <span>Categories</span>
+                    <span class="nav-chevron" aria-hidden="true"></span>
+                </button>
+                <ul class="nav-sub" id="categories-submenu">
+                    <li>
+                        <a href="{{ route('admin.categories.index') }}" class="nav-link {{ $categoriesActive ? 'active' : '' }}">All Categories</a>
+                    </li>
+                </ul>
+            </div>
+        </nav>
+
+        <div class="sidebar-footer">
+            <p class="user-name">{{ session('admin_name') }}</p>
+            <form class="logout-form" method="POST" action="{{ route('admin.logout') }}">
+                @csrf
+                <button class="logout-btn" type="submit">Logout</button>
+            </form>
+        </div>
     </aside>
     <main>
-        @yield('content')
+        <div class="content">
+            @if (session('success'))
+                <div class="alert">{{ session('success') }}</div>
+            @endif
+            @yield('content')
+        </div>
     </main>
 </div>
+<script>
+    (function () {
+        document.querySelectorAll('[data-nav-group]').forEach(function (group) {
+            var toggle = group.querySelector('[data-nav-toggle]');
+            if (!toggle) return;
+
+            toggle.addEventListener('click', function () {
+                var isOpen = group.classList.toggle('is-open');
+                toggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+            });
+        });
+    })();
+</script>
 </body>
 </html>
