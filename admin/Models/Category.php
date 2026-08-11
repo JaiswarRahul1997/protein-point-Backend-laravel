@@ -16,9 +16,53 @@ class Category extends Model
         'name',
         'url_key',
         'description',
+        'image',
+        'brand_logo',
         'status',
         'position',
     ];
+
+    public function imageUrl(): ?string
+    {
+        return $this->mediaPublicUrl($this->image);
+    }
+
+    public function adminImageUrl(): ?string
+    {
+        return $this->mediaAdminUrl($this->image);
+    }
+
+    public function brandLogoUrl(): ?string
+    {
+        return $this->mediaPublicUrl($this->brand_logo);
+    }
+
+    public function adminBrandLogoUrl(): ?string
+    {
+        return $this->mediaAdminUrl($this->brand_logo);
+    }
+
+    private function mediaPublicUrl(?string $path): ?string
+    {
+        $path = is_string($path) ? trim($path) : '';
+
+        if ($path === '') {
+            return null;
+        }
+
+        return Product::publicMediaUrl($path);
+    }
+
+    private function mediaAdminUrl(?string $path): ?string
+    {
+        $path = is_string($path) ? trim($path) : '';
+
+        if ($path === '') {
+            return null;
+        }
+
+        return Product::mediaUrl($path);
+    }
 
     protected function casts(): array
     {

@@ -32,6 +32,10 @@ class Product extends Model
         'disabled' => 'Disabled',
     ];
 
+    public const DEFAULT_SIZES = ['500g', '1kg', '2kg'];
+
+    public const DEFAULT_FLAVORS = ['Chocolate', 'Vanilla', 'Strawberry', 'Unflavored'];
+
     protected $fillable = [
         'name',
         'sku',
@@ -44,6 +48,8 @@ class Product extends Model
         'status',
         'url_key',
         'brand',
+        'sizes',
+        'flavors',
         'thumbnail',
         'images',
         'videos',
@@ -60,6 +66,8 @@ class Product extends Model
             'quantity' => 'integer',
             'images' => 'array',
             'videos' => 'array',
+            'sizes' => 'array',
+            'flavors' => 'array',
         ];
     }
 
@@ -86,6 +94,60 @@ class Product extends Model
     public function statusLabel(): string
     {
         return self::STATUSES[$this->status] ?? $this->status;
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    public function sizeOptions(): array
+    {
+        return $this->normalizedOptions($this->sizes, self::DEFAULT_SIZES);
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    public function flavorOptions(): array
+    {
+        return $this->normalizedOptions($this->flavors, self::DEFAULT_FLAVORS);
+    }
+
+    /**
+     * @param  array<int, string>|null  $values
+     * @param  array<int, string>  $defaults
+     * @return array<int, string>
+     */
+    public static function parseOptionList(?string $raw, array $defaults = []): array
+    {
+        if ($raw === null || trim($raw) === '') {
+            return $defaults;
+        }
+
+        $parts = preg_split('/\s*[,|;]\s*/', $raw) ?: [];
+
+        return collect($parts)
+            ->map(fn ($value) => trim((string) $value))
+            ->filter()
+            ->unique()
+            ->values()
+            ->all();
+    }
+
+    /**
+     * @param  array<int, string>|null  $values
+     * @param  array<int, string>  $defaults
+     * @return array<int, string>
+     */
+    private function normalizedOptions(?array $values, array $defaults): array
+    {
+        $normalized = collect($values ?? [])
+            ->map(fn ($value) => trim((string) $value))
+            ->filter()
+            ->unique()
+            ->values()
+            ->all();
+
+        return $normalized !== [] ? $normalized : $defaults;
     }
 
     public function thumbnailUrl(): ?string

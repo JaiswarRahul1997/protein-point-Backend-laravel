@@ -26,6 +26,8 @@ class OrderController extends Controller
             'items' => ['required', 'array', 'min:1'],
             'items.*.product_id' => ['required', 'integer', 'exists:products,id'],
             'items.*.quantity' => ['required', 'integer', 'min:1', 'max:100'],
+            'items.*.size' => ['nullable', 'string', 'max:100'],
+            'items.*.flavor' => ['nullable', 'string', 'max:100'],
         ]);
 
         $productIds = collect($data['items'])->pluck('product_id')->unique()->all();
@@ -52,9 +54,14 @@ class OrderController extends Controller
                 $lineTotal = round($unitPrice * $quantity, 2);
                 $subtotal += $lineTotal;
 
+                $options = collect([
+                    filled($item['size'] ?? null) ? 'Size: '.$item['size'] : null,
+                    filled($item['flavor'] ?? null) ? 'Flavor: '.$item['flavor'] : null,
+                ])->filter()->implode(' · ');
+
                 $lines[] = [
                     'product_id' => $product->id,
-                    'product_name' => $product->name,
+                    'product_name' => $options !== '' ? $product->name.' ('.$options.')' : $product->name,
                     'product_sku' => $product->sku,
                     'product_thumbnail' => $product->thumbnail,
                     'unit_price' => $unitPrice,

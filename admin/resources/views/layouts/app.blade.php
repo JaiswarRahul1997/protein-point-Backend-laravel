@@ -422,6 +422,74 @@
             align-items: center;
         }
 
+        .status-switch {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.55rem;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .status-switch input {
+            position: absolute;
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .status-switch-track {
+            position: relative;
+            width: 2.6rem;
+            height: 1.4rem;
+            border-radius: 999px;
+            background: #c4c4c4;
+            transition: background 0.2s ease;
+            flex-shrink: 0;
+        }
+
+        .status-switch-track::after {
+            content: '';
+            position: absolute;
+            top: 0.15rem;
+            left: 0.15rem;
+            width: 1.1rem;
+            height: 1.1rem;
+            border-radius: 50%;
+            background: var(--white);
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+            transition: transform 0.2s ease;
+        }
+
+        .status-switch input:checked + .status-switch-track {
+            background: var(--black);
+        }
+
+        .status-switch input:checked + .status-switch-track::after {
+            transform: translateX(1.2rem);
+        }
+
+        .status-switch input:focus-visible + .status-switch-track {
+            outline: 2px solid var(--black);
+            outline-offset: 2px;
+        }
+
+        .status-switch-label {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--muted);
+            min-width: 1.6rem;
+        }
+
+        .status-switch input:checked ~ .status-switch-label {
+            color: var(--black);
+        }
+
+        .status-switch-form {
+            display: inline-flex;
+            margin: 0;
+        }
+
         .form-grid {
             display: grid;
             grid-template-columns: repeat(2, minmax(0, 1fr));

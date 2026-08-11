@@ -97,6 +97,8 @@ class ProductController extends Controller
             'stock_status_label' => $product->stockStatusLabel(),
             'url_key' => $product->url_key,
             'description' => $product->description,
+            'sizes' => $product->sizeOptions(),
+            'flavors' => $product->flavorOptions(),
             'thumbnail' => Product::publicMediaUrl($product->thumbnail),
             'images' => collect($product->images ?? [])
                 ->map(fn ($path) => Product::publicMediaUrl($path))

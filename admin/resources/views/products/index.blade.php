@@ -9,6 +9,8 @@
             <p class="page-lead">Manage catalog products{{ $type ? ' of type '.$typeLabel : '' }}.</p>
         </div>
         <div class="actions">
+            <a class="btn btn-outline" href="{{ route('admin.products.csv-template') }}">Download CSV Template</a>
+            <a class="btn btn-outline" href="{{ route('admin.products.export-csv') }}">Download CSV</a>
             <form method="POST" action="{{ route('admin.products.seed-dummy') }}" onsubmit="return confirm('Add 10 dummy products for each product type (50 total)?')">
                 @csrf
                 <button class="btn btn-outline" type="submit">Seed Dummy Products</button>
@@ -16,6 +18,31 @@
             <a class="btn" href="{{ route('admin.products.create', $type ? ['type' => $type] : []) }}">Add Product</a>
         </div>
     </header>
+
+    <section class="form-panel" style="margin-bottom:1.5rem">
+        <h2 class="section-title" style="margin-bottom:0.75rem">Upload Products CSV</h2>
+        <form method="POST" action="{{ route('admin.products.import-csv') }}" enctype="multipart/form-data" class="actions" style="flex-wrap:wrap">
+            @csrf
+            <input
+                class="form-input"
+                type="file"
+                name="csv_file"
+                accept=".csv,text/csv"
+                required
+                style="max-width:320px"
+            >
+            <button class="btn" type="submit">Upload CSV</button>
+            <a class="btn btn-outline" href="{{ route('admin.products.csv-template') }}">Download template</a>
+            <a class="btn btn-outline" href="{{ route('admin.products.export-csv') }}">Download current CSV</a>
+        </form>
+        <p class="form-hint" style="margin-top:0.75rem">
+            Columns: name, sku, type, attribute_set, stock_status, price, quantity, visibility, status, url_key, brand, sizes, flavors, description, categories.
+            Use commas for sizes/flavors (e.g. <code>500g,1kg</code>) and pipes for category URL keys (e.g. <code>whey|creatine</code>). Matching is by SKU.
+        </p>
+        @error('csv_file')
+            <p class="form-error" style="margin-top:0.75rem">{{ $message }}</p>
+        @enderror
+    </section>
 
     @if ($products->isEmpty())
         <div class="empty-state">

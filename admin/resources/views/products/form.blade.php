@@ -102,6 +102,34 @@
                     @error('brand')<p class="form-error">{{ $message }}</p>@enderror
                 </div>
 
+                <div class="form-field">
+                    <label class="form-label" for="sizes">Sizes</label>
+                    <input
+                        class="form-input"
+                        id="sizes"
+                        name="sizes"
+                        type="text"
+                        value="{{ old('sizes', is_array($product->sizes) ? implode(', ', $product->sizes) : '') }}"
+                        placeholder="500g, 1kg, 2kg"
+                    >
+                    <p class="form-hint">Comma-separated options for the storefront Size dropdown. Leave blank to use defaults.</p>
+                    @error('sizes')<p class="form-error">{{ $message }}</p>@enderror
+                </div>
+
+                <div class="form-field">
+                    <label class="form-label" for="flavors">Flavors</label>
+                    <input
+                        class="form-input"
+                        id="flavors"
+                        name="flavors"
+                        type="text"
+                        value="{{ old('flavors', is_array($product->flavors) ? implode(', ', $product->flavors) : '') }}"
+                        placeholder="Chocolate, Vanilla, Strawberry"
+                    >
+                    <p class="form-hint">Comma-separated options for the storefront Flavor dropdown. Leave blank to use defaults.</p>
+                    @error('flavors')<p class="form-error">{{ $message }}</p>@enderror
+                </div>
+
                 <div class="form-field full">
                     <label class="form-label">Categories</label>
                     @if ($categories->isEmpty())

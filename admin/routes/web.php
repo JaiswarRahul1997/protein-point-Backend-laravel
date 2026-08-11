@@ -28,6 +28,9 @@ Route::middleware(EnsureAdminAccess::class)->group(function () {
         ->whereIn('type', ['simple', 'configurable', 'bundle', 'grouped', 'virtual'])
         ->name('admin.products.index');
     Route::post('products-manage/seed-dummy', [ProductController::class, 'seedDummy'])->name('admin.products.seed-dummy');
+    Route::get('products-manage/csv-template', [ProductController::class, 'csvTemplate'])->name('admin.products.csv-template');
+    Route::get('products-manage/export-csv', [ProductController::class, 'exportCsv'])->name('admin.products.export-csv');
+    Route::post('products-manage/import-csv', [ProductController::class, 'importCsv'])->name('admin.products.import-csv');
     Route::get('products-manage/create', [ProductController::class, 'create'])->name('admin.products.create');
     Route::post('products-manage', [ProductController::class, 'store'])->name('admin.products.store');
     Route::get('products-manage/{product}/edit', [ProductController::class, 'edit'])->name('admin.products.edit');
@@ -36,9 +39,12 @@ Route::middleware(EnsureAdminAccess::class)->group(function () {
 
     Route::get('categories', [CategoryController::class, 'index'])->name('admin.categories.index');
     Route::get('categories/create', [CategoryController::class, 'create'])->name('admin.categories.create');
+    Route::get('categories/export-csv', [CategoryController::class, 'exportCsv'])->name('admin.categories.export-csv');
+    Route::post('categories/import-csv', [CategoryController::class, 'importCsv'])->name('admin.categories.import-csv');
     Route::post('categories', [CategoryController::class, 'store'])->name('admin.categories.store');
     Route::get('categories/{category}/edit', [CategoryController::class, 'edit'])->name('admin.categories.edit');
     Route::put('categories/{category}', [CategoryController::class, 'update'])->name('admin.categories.update');
+    Route::patch('categories/{category}/toggle-status', [CategoryController::class, 'toggleStatus'])->name('admin.categories.toggle-status');
     Route::delete('categories/{category}', [CategoryController::class, 'destroy'])->name('admin.categories.destroy');
 
     Route::get('banners', [BannerController::class, 'index'])->name('admin.banners.index');
