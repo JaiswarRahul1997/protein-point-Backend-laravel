@@ -304,6 +304,194 @@
             border-radius: var(--radius);
         }
 
+        /* Magento-style grid filters */
+        .grid-toolbar {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 0.75rem;
+            position: relative;
+        }
+
+        .grid-tool-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            padding: 0.45rem 0.75rem;
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            background: var(--white);
+            color: var(--black);
+            font: inherit;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .grid-tool-btn:hover,
+        .grid-tool-btn.is-active {
+            border-color: var(--black);
+            background: var(--surface);
+        }
+
+        .grid-tool-btn .grid-tool-icon {
+            font-size: 0.95rem;
+            line-height: 1;
+        }
+
+        .grid-filter-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 1.15rem;
+            height: 1.15rem;
+            padding: 0 0.3rem;
+            border-radius: 999px;
+            background: var(--black);
+            color: var(--white);
+            font-size: 0.7rem;
+            font-weight: 700;
+        }
+
+        .grid-filter-panel {
+            display: none;
+            margin-bottom: 1rem;
+            padding: 1rem 1.1rem 0.85rem;
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            background: var(--surface);
+        }
+
+        .grid-filter-panel.is-open {
+            display: block;
+        }
+
+        .grid-filter-fields {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 0.85rem 1.25rem;
+        }
+
+        @media (max-width: 960px) {
+            .grid-filter-fields {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+        }
+
+        @media (max-width: 640px) {
+            .grid-filter-fields {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .grid-filter-field label {
+            display: block;
+            margin-bottom: 0.35rem;
+            font-size: 0.8rem;
+            font-weight: 700;
+        }
+
+        .grid-filter-range {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.5rem;
+        }
+
+        .grid-filter-range .form-input {
+            width: 100%;
+        }
+
+        .grid-filter-actions {
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            gap: 0.75rem;
+            margin-top: 1rem;
+            padding-top: 0.85rem;
+            border-top: 1px solid var(--border);
+        }
+
+        .grid-filter-cancel {
+            color: var(--black);
+            font-size: 0.9rem;
+            font-weight: 600;
+            text-decoration: none;
+            background: none;
+            border: 0;
+            cursor: pointer;
+            font: inherit;
+        }
+
+        .grid-filter-cancel:hover {
+            text-decoration: underline;
+        }
+
+        .grid-columns-menu {
+            display: none;
+            position: absolute;
+            top: calc(100% + 0.35rem);
+            right: 0;
+            z-index: 40;
+            width: min(280px, 100%);
+            max-height: 360px;
+            overflow: auto;
+            padding: 0.75rem;
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            background: var(--white);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+        }
+
+        .grid-columns-menu.is-open {
+            display: block;
+        }
+
+        .grid-columns-title {
+            margin: 0 0 0.65rem;
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: var(--muted);
+        }
+
+        .grid-columns-list {
+            display: grid;
+            gap: 0.35rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .grid-columns-list label {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.85rem;
+            cursor: pointer;
+        }
+
+        .grid-columns-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 0.75rem;
+            padding-top: 0.5rem;
+            border-top: 1px solid var(--border);
+        }
+
+        .grid-columns-actions button {
+            border: 0;
+            background: none;
+            color: var(--black);
+            font: inherit;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            padding: 0;
+        }
+
+        .grid-columns-actions button:hover {
+            text-decoration: underline;
+        }
+
+
         table.data-table {
             width: 100%;
             border-collapse: collapse;
@@ -610,11 +798,12 @@
 </head>
 <body>
 @php
-    $productTypes = \Admin\Models\Product::TYPES;
     $categoriesActive = request()->routeIs('admin.categories.*');
+    $attributesActive = request()->routeIs('admin.attributes.*');
     $bannersActive = request()->routeIs('admin.banners.*');
     $menusActive = request()->routeIs('admin.menus.*');
     $ordersActive = request()->routeIs('admin.orders.*');
+    $customersActive = request()->routeIs('admin.customers.*');
 @endphp
 <div class="shell">
     <aside>
@@ -637,13 +826,11 @@
                 </button>
                 <ul class="nav-sub" id="products-submenu">
                     <li>
-                        <a href="{{ route('admin.products.index') }}" class="nav-link {{ request()->routeIs('admin.products.index') && request()->route('type') === null ? 'active' : '' }}">All Products</a>
+                        <a href="{{ route('admin.products.index') }}" class="nav-link {{ request()->routeIs('admin.products.index') ? 'active' : '' }}">All Products</a>
                     </li>
-                    @foreach ($productTypes as $slug => $label)
-                        <li>
-                            <a href="{{ route('admin.products.index', ['type' => $slug]) }}" class="nav-link {{ request()->route('type') === $slug ? 'active' : '' }}">{{ $label }}</a>
-                        </li>
-                    @endforeach
+                    <li>
+                        <a href="{{ route('admin.attributes.index') }}" class="nav-link {{ $attributesActive ? 'active' : '' }}">Attributes</a>
+                    </li>
                 </ul>
             </div>
 
@@ -697,6 +884,24 @@
                 <ul class="nav-sub" id="menus-submenu">
                     <li>
                         <a href="{{ route('admin.menus.index') }}" class="nav-link {{ $menusActive ? 'active' : '' }}">All Menu Items</a>
+                    </li>
+                </ul>
+            </div>
+
+            <div class="nav-group {{ $customersActive ? 'is-open' : '' }}" data-nav-group>
+                <button
+                    type="button"
+                    class="nav-group-title"
+                    aria-expanded="{{ $customersActive ? 'true' : 'false' }}"
+                    aria-controls="customers-submenu"
+                    data-nav-toggle
+                >
+                    <span>Customers</span>
+                    <span class="nav-chevron" aria-hidden="true"></span>
+                </button>
+                <ul class="nav-sub" id="customers-submenu">
+                    <li>
+                        <a href="{{ route('admin.customers.index') }}" class="nav-link {{ $customersActive ? 'active' : '' }}">All Customers</a>
                     </li>
                 </ul>
             </div>

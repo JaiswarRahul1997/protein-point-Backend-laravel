@@ -2,6 +2,14 @@
 
 @section('title', 'Categories')
 
+@php
+    $filters = $filters ?? [];
+    $hasActiveFilters = $hasActiveFilters ?? false;
+    $filteredMode = $filteredMode ?? false;
+    $activeFilterCount = collect($filters)->filter(fn ($value) => filled($value))->count();
+    $clearUrl = route('admin.categories.index');
+@endphp
+
 @section('content')
     <header class="page-header">
         <div>
@@ -33,26 +41,195 @@
         @enderror
     </section>
 
+    <div class="grid-toolbar" data-grid-toolbar>
+        <button type="button" class="grid-tool-btn {{ $hasActiveFilters ? 'is-active' : '' }}" data-filter-toggle>
+            <span class="grid-tool-icon" aria-hidden="true">▾</span>
+            Filters
+            @if ($activeFilterCount > 0)
+                <span class="grid-filter-badge">{{ $activeFilterCount }}</span>
+            @endif
+        </button>
+        <button type="button" class="grid-tool-btn" data-columns-toggle>
+            <span class="grid-tool-icon" aria-hidden="true">⚙</span>
+            Columns
+        </button>
+
+        <div class="grid-columns-menu" data-columns-menu hidden>
+            <p class="grid-columns-title" data-columns-count>Columns</p>
+            <div class="grid-columns-list" data-columns-list></div>
+            <div class="grid-columns-actions">
+                <button type="button" data-columns-reset>Reset</button>
+                <button type="button" data-columns-close>Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="grid-filter-panel {{ $hasActiveFilters ? 'is-open' : '' }}" data-filter-panel @if(!$hasActiveFilters) hidden @endif>
+        <form method="GET" action="{{ route('admin.categories.index') }}">
+            <div class="grid-filter-fields">
+                <div class="grid-filter-field">
+                    <label>ID</label>
+                    <div class="grid-filter-range">
+                        <input class="form-input" type="number" name="id_from" placeholder="from" value="{{ $filters['id_from'] ?? '' }}">
+                        <input class="form-input" type="number" name="id_to" placeholder="to" value="{{ $filters['id_to'] ?? '' }}">
+                    </div>
+                </div>
+
+                <div class="grid-filter-field">
+                    <label for="filter-cat-name">Name</label>
+                    <input class="form-input" id="filter-cat-name" type="text" name="name" value="{{ $filters['name'] ?? '' }}">
+                </div>
+
+                <div class="grid-filter-field">
+                    <label for="filter-cat-url-key">URL Key</label>
+                    <input class="form-input" id="filter-cat-url-key" type="text" name="url_key" value="{{ $filters['url_key'] ?? '' }}">
+                </div>
+
+                <div class="grid-filter-field">
+                    <label for="filter-cat-type">Type</label>
+                    <select class="form-input" id="filter-cat-type" name="category_type">
+                        <option value="">Any</option>
+                        <option value="category" @selected(($filters['category_type'] ?? '') === 'category')>Category</option>
+                        <option value="subcategory" @selected(($filters['category_type'] ?? '') === 'subcategory')>Sub-Category</option>
+                    </select>
+                </div>
+
+                <div class="grid-filter-field">
+                    <label for="filter-cat-status">Show on Frontend</label>
+                    <select class="form-input" id="filter-cat-status" name="status">
+                        <option value="">Any</option>
+                        <option value="1" @selected(($filters['status'] ?? '') === '1')>On</option>
+                        <option value="0" @selected(($filters['status'] ?? '') === '0')>Off</option>
+                    </select>
+                </div>
+
+                <div class="grid-filter-field">
+                    <label>Position</label>
+                    <div class="grid-filter-range">
+                        <input class="form-input" type="number" name="position_from" placeholder="from" value="{{ $filters['position_from'] ?? '' }}">
+                        <input class="form-input" type="number" name="position_to" placeholder="to" value="{{ $filters['position_to'] ?? '' }}">
+                    </div>
+                </div>
+
+                <div class="grid-filter-field">
+                    <label>Last Updated At</label>
+                    <div class="grid-filter-range">
+                        <input class="form-input" type="date" name="updated_from" value="{{ $filters['updated_from'] ?? '' }}">
+                        <input class="form-input" type="date" name="updated_to" value="{{ $filters['updated_to'] ?? '' }}">
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid-filter-actions">
+                @if ($hasActiveFilters)
+                    <a class="grid-filter-cancel" href="{{ $clearUrl }}">Clear all</a>
+                @endif
+                <button class="grid-filter-cancel" type="button" data-filter-cancel>Cancel</button>
+                <button class="btn" type="submit">Apply Filters</button>
+            </div>
+        </form>
+    </div>
+
     @if ($categories->isEmpty())
         <div class="empty-state">
-            <p>No categories found.</p>
-            <a class="btn" href="{{ route('admin.categories.create') }}">Create your first category</a>
+            @if ($hasActiveFilters)
+                <p>No categories match the selected filters.</p>
+                <a class="btn btn-outline" href="{{ $clearUrl }}">Clear Filters</a>
+            @else
+                <p>No categories found.</p>
+                <a class="btn" href="{{ route('admin.categories.create') }}">Create your first category</a>
+            @endif
+        </div>
+    @elseif ($filteredMode)
+        <div class="table-wrap">
+            <table class="data-table" id="categories-table" data-column-storage="admin.categories.columns">
+                <thead>
+                    <tr>
+                        <th data-col="id">ID</th>
+                        <th data-col="image">Image</th>
+                        <th data-col="brand_logo">Brand Logo</th>
+                        <th data-col="name">Name</th>
+                        <th data-col="type">Type</th>
+                        <th data-col="parent">Parent</th>
+                        <th data-col="url_key">URL Key</th>
+                        <th data-col="products">Products</th>
+                        <th data-col="status">Show on Frontend</th>
+                        <th data-col="position">Position</th>
+                        <th data-col="updated_at">Last Updated At</th>
+                        <th data-col="action" data-col-locked="1">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach ($categories as $category)
+                        @php
+                            $image = $category->adminImageUrl() ?: $category->imageUrl();
+                            $logo = $category->adminBrandLogoUrl() ?: $category->brandLogoUrl();
+                        @endphp
+                        <tr>
+                            <td data-col="id">{{ $category->id }}</td>
+                            <td data-col="image">
+                                @if ($image)
+                                    <img src="{{ $image }}" alt="" style="width:40px;height:40px;object-fit:cover;border:1px solid #ddd">
+                                @else
+                                    —
+                                @endif
+                            </td>
+                            <td data-col="brand_logo">
+                                @if ($logo)
+                                    <img src="{{ $logo }}" alt="" style="width:40px;height:40px;object-fit:contain;border:1px solid #ddd;background:#fff">
+                                @else
+                                    —
+                                @endif
+                            </td>
+                            <td data-col="name"><strong>{{ $category->name }}</strong></td>
+                            <td data-col="type">{{ $category->parent_id ? 'Sub-Category' : 'Category' }}</td>
+                            <td data-col="parent">{{ $category->parent?->name ?: '—' }}</td>
+                            <td data-col="url_key">{{ $category->url_key }}</td>
+                            <td data-col="products">{{ $category->products_count }}</td>
+                            <td data-col="status">
+                                <form class="status-switch-form" method="POST" action="{{ route('admin.categories.toggle-status', $category) }}">
+                                    @csrf
+                                    @method('PATCH')
+                                    <label class="status-switch" title="{{ $category->status ? 'Visible on storefront' : 'Hidden from storefront' }}">
+                                        <input type="checkbox" @checked($category->status) onchange="this.form.submit()">
+                                        <span class="status-switch-track" aria-hidden="true"></span>
+                                        <span class="status-switch-label">{{ $category->status ? 'On' : 'Off' }}</span>
+                                    </label>
+                                </form>
+                            </td>
+                            <td data-col="position">{{ $category->position }}</td>
+                            <td data-col="updated_at">{{ $category->updated_at?->format('Y-m-d H:i') }}</td>
+                            <td data-col="action">
+                                <div class="actions">
+                                    <a class="btn btn-outline btn-sm" href="{{ route('admin.categories.create', ['parent_id' => $category->id]) }}">Add Sub-Category</a>
+                                    <a class="btn btn-outline btn-sm" href="{{ route('admin.categories.edit', $category) }}">Edit</a>
+                                    <form method="POST" action="{{ route('admin.categories.destroy', $category) }}" onsubmit="return confirm('Delete this category?')">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button class="btn btn-outline btn-sm" type="submit">Delete</button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                    @endforeach
+                </tbody>
+            </table>
         </div>
     @else
         <div class="table-wrap">
-            <table class="data-table" id="categories-table">
+            <table class="data-table" id="categories-table" data-column-storage="admin.categories.columns">
                 <thead>
                     <tr>
-                        <th>Image</th>
-                        <th>Brand Logo</th>
-                        <th>Name</th>
-                        <th>Type</th>
-                        <th>URL Key</th>
-                        <th>Products</th>
-                        <th>Show on Frontend</th>
-                        <th>Position</th>
-                        <th>Last Updated At</th>
-                        <th>Action</th>
+                        <th data-col="image">Image</th>
+                        <th data-col="brand_logo">Brand Logo</th>
+                        <th data-col="name">Name</th>
+                        <th data-col="type">Type</th>
+                        <th data-col="url_key">URL Key</th>
+                        <th data-col="products">Products</th>
+                        <th data-col="status">Show on Frontend</th>
+                        <th data-col="position">Position</th>
+                        <th data-col="updated_at">Last Updated At</th>
+                        <th data-col="action" data-col-locked="1">Action</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -64,21 +241,21 @@
                         @endphp
 
                         <tr class="category-parent-row" data-category-id="{{ $category->id }}">
-                            <td>
+                            <td data-col="image">
                                 @if ($parentImage)
                                     <img src="{{ $parentImage }}" alt="" style="width:40px;height:40px;object-fit:cover;border:1px solid #ddd">
                                 @else
                                     —
                                 @endif
                             </td>
-                            <td>
+                            <td data-col="brand_logo">
                                 @if ($parentLogo)
                                     <img src="{{ $parentLogo }}" alt="" style="width:40px;height:40px;object-fit:contain;border:1px solid #ddd;background:#fff">
                                 @else
                                     —
                                 @endif
                             </td>
-                            <td>
+                            <td data-col="name">
                                 @if ($hasChildren)
                                     <button
                                         type="button"
@@ -95,10 +272,10 @@
                                     <span class="category-child-count">(0)</span>
                                 @endif
                             </td>
-                            <td>Category</td>
-                            <td>{{ $category->url_key }}</td>
-                            <td>{{ $category->products_count }}</td>
-                            <td>
+                            <td data-col="type">Category</td>
+                            <td data-col="url_key">{{ $category->url_key }}</td>
+                            <td data-col="products">{{ $category->products_count }}</td>
+                            <td data-col="status">
                                 <form class="status-switch-form" method="POST" action="{{ route('admin.categories.toggle-status', $category) }}">
                                     @csrf
                                     @method('PATCH')
@@ -109,9 +286,9 @@
                                     </label>
                                 </form>
                             </td>
-                            <td>{{ $category->position }}</td>
-                            <td>{{ $category->updated_at?->format('Y-m-d H:i') }}</td>
-                            <td>
+                            <td data-col="position">{{ $category->position }}</td>
+                            <td data-col="updated_at">{{ $category->updated_at?->format('Y-m-d H:i') }}</td>
+                            <td data-col="action">
                                 <div class="actions">
                                     <a class="btn btn-outline btn-sm" href="{{ route('admin.categories.create', ['parent_id' => $category->id]) }}">Add Sub-Category</a>
                                     <a class="btn btn-outline btn-sm" href="{{ route('admin.categories.edit', $category) }}">Edit</a>
@@ -137,21 +314,21 @@
                                 data-category-id="{{ $child->id }}"
                                 hidden
                             >
-                                <td>
+                                <td data-col="image">
                                     @if ($childImage)
                                         <img src="{{ $childImage }}" alt="" style="width:40px;height:40px;object-fit:cover;border:1px solid #ddd">
                                     @else
                                         —
                                     @endif
                                 </td>
-                                <td>
+                                <td data-col="brand_logo">
                                     @if ($childLogo)
                                         <img src="{{ $childLogo }}" alt="" style="width:40px;height:40px;object-fit:contain;border:1px solid #ddd;background:#fff">
                                     @else
                                         —
                                     @endif
                                 </td>
-                                <td class="category-child-name">
+                                <td class="category-child-name" data-col="name">
                                     @if ($childHasChildren)
                                         <button
                                             type="button"
@@ -170,10 +347,10 @@
                                         @endif
                                     @endif
                                 </td>
-                                <td>Sub-Category</td>
-                                <td>{{ $child->url_key }}</td>
-                                <td>{{ $child->products_count }}</td>
-                                <td>
+                                <td data-col="type">Sub-Category</td>
+                                <td data-col="url_key">{{ $child->url_key }}</td>
+                                <td data-col="products">{{ $child->products_count }}</td>
+                                <td data-col="status">
                                     <form class="status-switch-form" method="POST" action="{{ route('admin.categories.toggle-status', $child) }}">
                                         @csrf
                                         @method('PATCH')
@@ -184,9 +361,9 @@
                                         </label>
                                     </form>
                                 </td>
-                                <td>{{ $child->position }}</td>
-                                <td>{{ $child->updated_at?->format('Y-m-d H:i') }}</td>
-                                <td>
+                                <td data-col="position">{{ $child->position }}</td>
+                                <td data-col="updated_at">{{ $child->updated_at?->format('Y-m-d H:i') }}</td>
+                                <td data-col="action">
                                     <div class="actions">
                                         <a class="btn btn-outline btn-sm" href="{{ route('admin.categories.create', ['parent_id' => $child->id]) }}">Add Sub-Category</a>
                                         <a class="btn btn-outline btn-sm" href="{{ route('admin.categories.edit', $child) }}">Edit</a>
@@ -211,25 +388,25 @@
                                     data-root-parent-id="{{ $category->id }}"
                                     hidden
                                 >
-                                    <td>
+                                    <td data-col="image">
                                         @if ($grandChildImage)
                                             <img src="{{ $grandChildImage }}" alt="" style="width:40px;height:40px;object-fit:cover;border:1px solid #ddd">
                                         @else
                                             —
                                         @endif
                                     </td>
-                                    <td>
+                                    <td data-col="brand_logo">
                                         @if ($grandChildLogo)
                                             <img src="{{ $grandChildLogo }}" alt="" style="width:40px;height:40px;object-fit:contain;border:1px solid #ddd;background:#fff">
                                         @else
                                             —
                                         @endif
                                     </td>
-                                    <td class="category-grandchild-name">↳ {{ $grandChild->name }}</td>
-                                    <td>Sub-Category</td>
-                                    <td>{{ $grandChild->url_key }}</td>
-                                    <td>{{ $grandChild->products_count }}</td>
-                                    <td>
+                                    <td class="category-grandchild-name" data-col="name">↳ {{ $grandChild->name }}</td>
+                                    <td data-col="type">Sub-Category</td>
+                                    <td data-col="url_key">{{ $grandChild->url_key }}</td>
+                                    <td data-col="products">{{ $grandChild->products_count }}</td>
+                                    <td data-col="status">
                                         <form class="status-switch-form" method="POST" action="{{ route('admin.categories.toggle-status', $grandChild) }}">
                                             @csrf
                                             @method('PATCH')
@@ -240,9 +417,9 @@
                                             </label>
                                         </form>
                                     </td>
-                                    <td>{{ $grandChild->position }}</td>
-                                    <td>{{ $grandChild->updated_at?->format('Y-m-d H:i') }}</td>
-                                    <td>
+                                    <td data-col="position">{{ $grandChild->position }}</td>
+                                    <td data-col="updated_at">{{ $grandChild->updated_at?->format('Y-m-d H:i') }}</td>
+                                    <td data-col="action">
                                         <div class="actions">
                                             <a class="btn btn-outline btn-sm" href="{{ route('admin.categories.edit', $grandChild) }}">Edit</a>
                                             <form method="POST" action="{{ route('admin.categories.destroy', $grandChild) }}" onsubmit="return confirm('Delete this sub-category?')">
@@ -314,6 +491,7 @@
         }
     </style>
 
+    @unless ($filteredMode)
     <script>
         (function () {
             const storageKey = 'admin.categories.openIds';
@@ -380,4 +558,7 @@
             });
         })();
     </script>
+    @endunless
+
+    @include('admin::partials.grid-toolbar-script')
 @endsection

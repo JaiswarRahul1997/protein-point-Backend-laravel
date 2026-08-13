@@ -32,10 +32,6 @@ class Product extends Model
         'disabled' => 'Disabled',
     ];
 
-    public const DEFAULT_SIZES = ['500g', '1kg', '2kg'];
-
-    public const DEFAULT_FLAVORS = ['Chocolate', 'Vanilla', 'Strawberry', 'Unflavored'];
-
     protected $fillable = [
         'name',
         'sku',
@@ -76,6 +72,16 @@ class Product extends Model
         return $this->belongsToMany(Category::class);
     }
 
+    public function attributeOptions(): BelongsToMany
+    {
+        return $this->belongsToMany(
+            ProductAttributeOption::class,
+            'product_attribute_option',
+            'product_id',
+            'attribute_option_id'
+        )->with(['attribute' => fn ($q) => $q->orderBy('sort_order')->orderBy('label')]);
+    }
+
     public function typeLabel(): string
     {
         return self::TYPES[$this->type] ?? ucfirst($this->type);
@@ -97,30 +103,66 @@ class Product extends Model
     }
 
     /**
-     * @return array<int, string>
+     * Dynamic Magento-style attributes assigned to this product for storefront dropdowns.
+     *
+     * @return array<int, array{code: string, label: string, required: bool, options: array<int, array{value: string, label: string}>}>
      */
-    public function sizeOptions(): array
+    public function frontendAttributes(): array
     {
-        return $this->normalizedOptions($this->sizes, self::DEFAULT_SIZES);
+        $options = $this->relationLoaded('attributeOptions')
+            ? $this->attributeOptions
+            : $this->attributeOptions()->with('attribute')->get();
+
+        return $options
+            ->filter(function (ProductAttributeOption $option) {
+                $attribute = $option->attribute;
+
+                return $attribute
+                    && $attribute->status === 'enabled'
+                    && $attribute->is_visible_on_frontend
+                    && $option->status === 'enabled'
+                    && $attribute->frontend_input === 'select';
+            })
+            ->groupBy(fn (ProductAttributeOption $option) => $option->attribute_id)
+            ->map(function ($grouped) {
+                /** @var ProductAttributeOption $first */
+                $first = $grouped->first();
+                $attribute = $first->attribute;
+
+                $sorted = $grouped->sortBy([
+                    ['sort_order', 'asc'],
+                    ['label', 'asc'],
+                ])->values();
+
+                return [
+                    'code' => $attribute->code,
+                    'label' => $attribute->label,
+                    'required' => (bool) $attribute->is_required,
+                    'sort_order' => (int) $attribute->sort_order,
+                    'options' => $sorted->map(fn (ProductAttributeOption $option) => [
+                        'value' => $option->value,
+                        'label' => $option->label,
+                    ])->values()->all(),
+                ];
+            })
+            ->filter(fn (array $attribute) => $attribute['options'] !== [])
+            ->sortBy('sort_order')
+            ->values()
+            ->map(function (array $attribute) {
+                unset($attribute['sort_order']);
+
+                return $attribute;
+            })
+            ->all();
     }
 
     /**
      * @return array<int, string>
      */
-    public function flavorOptions(): array
-    {
-        return $this->normalizedOptions($this->flavors, self::DEFAULT_FLAVORS);
-    }
-
-    /**
-     * @param  array<int, string>|null  $values
-     * @param  array<int, string>  $defaults
-     * @return array<int, string>
-     */
-    public static function parseOptionList(?string $raw, array $defaults = []): array
+    public static function parseOptionList(?string $raw): array
     {
         if ($raw === null || trim($raw) === '') {
-            return $defaults;
+            return [];
         }
 
         $parts = preg_split('/\s*[,|;]\s*/', $raw) ?: [];
@@ -131,23 +173,6 @@ class Product extends Model
             ->unique()
             ->values()
             ->all();
-    }
-
-    /**
-     * @param  array<int, string>|null  $values
-     * @param  array<int, string>  $defaults
-     * @return array<int, string>
-     */
-    private function normalizedOptions(?array $values, array $defaults): array
-    {
-        $normalized = collect($values ?? [])
-            ->map(fn ($value) => trim((string) $value))
-            ->filter()
-            ->unique()
-            ->values()
-            ->all();
-
-        return $normalized !== [] ? $normalized : $defaults;
     }
 
     public function thumbnailUrl(): ?string

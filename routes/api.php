@@ -20,3 +20,12 @@ Route::get('/categories', [CategoryController::class, 'index']);
 Route::get('/banners', [BannerController::class, 'index']);
 Route::get('/menus', [MenuController::class, 'index']);
 Route::post('/orders', [OrderController::class, 'store']);
+
+Route::post('/auth/register', [\App\Http\Controllers\Api\CustomerAuthController::class, 'register']);
+Route::post('/auth/login', [\App\Http\Controllers\Api\CustomerAuthController::class, 'login']);
+Route::post('/auth/logout', [\App\Http\Controllers\Api\CustomerAuthController::class, 'logout']);
+Route::get('/auth/me', [\App\Http\Controllers\Api\CustomerAuthController::class, 'me']);
+Route::put('/auth/profile', [\App\Http\Controllers\Api\CustomerAuthController::class, 'updateProfile']);
+Route::put('/auth/password', [\App\Http\Controllers\Api\CustomerAuthController::class, 'updatePassword']);
+Route::get('/auth/orders/{order}', [\App\Http\Controllers\Api\CustomerAuthController::class, 'order']);
+Route::post('/auth/impersonate', [\App\Http\Controllers\Api\CustomerAuthController::class, 'impersonate']);

@@ -4,6 +4,8 @@ namespace Admin\Http\Controllers;
 
 use Admin\Models\Category;
 use Admin\Models\Product;
+use Admin\Models\ProductAttribute;
+use Admin\Models\ProductAttributeOption;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -18,13 +20,36 @@ class ProductController extends Controller
 {
     public function index(Request $request, ?string $type = null): View
     {
-        if ($type !== null && ! array_key_exists($type, Product::TYPES)) {
+        if ($type !== null && $type !== 'all' && ! array_key_exists($type, Product::TYPES)) {
             abort(404);
         }
 
+        if ($type === null) {
+            $typeCounts = Product::query()
+                ->selectRaw('type, COUNT(*) as total')
+                ->groupBy('type')
+                ->pluck('total', 'type');
+
+            $types = collect(Product::TYPES)->map(function (string $label, string $slug) use ($typeCounts) {
+                return [
+                    'slug' => $slug,
+                    'label' => $label,
+                    'count' => (int) ($typeCounts[$slug] ?? 0),
+                ];
+            })->values();
+
+            return view('admin::products.types', [
+                'types' => $types,
+                'totalProducts' => (int) $typeCounts->sum(),
+            ]);
+        }
+
+        $filters = $this->productFilters($request);
+
         $products = Product::query()
             ->with('categories')
-            ->when($type, fn ($q) => $q->where('type', $type))
+            ->when($type !== 'all', fn ($q) => $q->where('type', $type))
+            ->tap(fn ($q) => $this->applyProductFilters($q, $filters, $type))
             ->latest('updated_at')
             ->paginate(20)
             ->withQueryString();
@@ -32,8 +57,132 @@ class ProductController extends Controller
         return view('admin::products.index', [
             'products' => $products,
             'type' => $type,
-            'typeLabel' => $type ? Product::TYPES[$type] : 'All Products',
+            'typeLabel' => $type === 'all' ? 'All Products' : Product::TYPES[$type],
+            'filters' => $filters,
+            'hasActiveFilters' => $this->hasActiveFilters($filters),
+            'filterOptions' => [
+                'types' => Product::TYPES,
+                'visibilities' => Product::VISIBILITIES,
+                'statuses' => Product::STATUSES,
+                'stockStatuses' => Product::STOCK_STATUSES,
+                'attributeSets' => Product::query()
+                    ->whereNotNull('attribute_set')
+                    ->where('attribute_set', '!=', '')
+                    ->distinct()
+                    ->orderBy('attribute_set')
+                    ->pluck('attribute_set'),
+                'brands' => Product::query()
+                    ->whereNotNull('brand')
+                    ->where('brand', '!=', '')
+                    ->distinct()
+                    ->orderBy('brand')
+                    ->pluck('brand'),
+            ],
         ]);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function productFilters(Request $request): array
+    {
+        return [
+            'id_from' => $request->query('id_from'),
+            'id_to' => $request->query('id_to'),
+            'name' => $request->query('name'),
+            'sku' => $request->query('sku'),
+            'price_from' => $request->query('price_from'),
+            'price_to' => $request->query('price_to'),
+            'product_type' => $request->query('product_type'),
+            'attribute_set' => $request->query('attribute_set'),
+            'visibility' => $request->query('visibility'),
+            'status' => $request->query('status'),
+            'stock_status' => $request->query('stock_status'),
+            'url_key' => $request->query('url_key'),
+            'brand' => $request->query('brand'),
+            'updated_from' => $request->query('updated_from'),
+            'updated_to' => $request->query('updated_to'),
+        ];
+    }
+
+    /**
+     * @param  array<string, mixed>  $filters
+     */
+    private function applyProductFilters($query, array $filters, string $type): void
+    {
+        if (filled($filters['id_from']) && is_numeric($filters['id_from'])) {
+            $query->where('id', '>=', (int) $filters['id_from']);
+        }
+
+        if (filled($filters['id_to']) && is_numeric($filters['id_to'])) {
+            $query->where('id', '<=', (int) $filters['id_to']);
+        }
+
+        if (filled($filters['name'])) {
+            $query->where('name', 'ilike', '%'.$filters['name'].'%');
+        }
+
+        if (filled($filters['sku'])) {
+            $query->where('sku', 'ilike', '%'.$filters['sku'].'%');
+        }
+
+        if (filled($filters['price_from']) && is_numeric($filters['price_from'])) {
+            $query->where('price', '>=', (float) $filters['price_from']);
+        }
+
+        if (filled($filters['price_to']) && is_numeric($filters['price_to'])) {
+            $query->where('price', '<=', (float) $filters['price_to']);
+        }
+
+        if ($type === 'all' && filled($filters['product_type']) && array_key_exists($filters['product_type'], Product::TYPES)) {
+            $query->where('type', $filters['product_type']);
+        }
+
+        if (filled($filters['attribute_set'])) {
+            $query->where('attribute_set', $filters['attribute_set']);
+        }
+
+        if (filled($filters['visibility']) && array_key_exists($filters['visibility'], Product::VISIBILITIES)) {
+            $query->where('visibility', $filters['visibility']);
+        }
+
+        if (filled($filters['status']) && array_key_exists($filters['status'], Product::STATUSES)) {
+            $query->where('status', $filters['status']);
+        }
+
+        if (filled($filters['stock_status']) && array_key_exists($filters['stock_status'], Product::STOCK_STATUSES)) {
+            $query->where('stock_status', $filters['stock_status']);
+        }
+
+        if (filled($filters['url_key'])) {
+            $query->where('url_key', 'ilike', '%'.$filters['url_key'].'%');
+        }
+
+        if (filled($filters['brand'])) {
+            $query->where('brand', $filters['brand']);
+        }
+
+        if (filled($filters['updated_from'])) {
+            $query->whereDate('updated_at', '>=', $filters['updated_from']);
+        }
+
+        if (filled($filters['updated_to'])) {
+            $query->whereDate('updated_at', '<=', $filters['updated_to']);
+        }
+    }
+
+    /**
+     * @param  array<string, mixed>  $filters
+     */
+    private function hasActiveFilters(array $filters): bool
+    {
+        foreach ($filters as $value) {
+            if (filled($value)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     public function create(Request $request): View
@@ -54,6 +203,8 @@ class ProductController extends Controller
             ]),
             'categories' => $this->categoryOptions(),
             'selectedCategoryIds' => [],
+            'attributes' => $this->attributeCatalog(),
+            'selectedAttributeOptionIds' => [],
             'mode' => 'create',
         ]);
     }
@@ -61,10 +212,14 @@ class ProductController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $data = $this->validated($request);
+        $attributeOptionIds = $data['attribute_option_ids'] ?? [];
+        unset($data['attribute_option_ids']);
         $data = $this->storeMedia($request, $data);
 
         $product = Product::create($data);
         $product->categories()->sync($request->input('categories', []));
+        $product->attributeOptions()->sync($attributeOptionIds);
+        $this->syncBrandFromAttributes($product);
 
         return redirect()
             ->route('admin.products.index', ['type' => $product->type])
@@ -77,6 +232,8 @@ class ProductController extends Controller
             'product' => $product,
             'categories' => $this->categoryOptions(),
             'selectedCategoryIds' => $product->categories()->pluck('categories.id')->all(),
+            'attributes' => $this->attributeCatalog(),
+            'selectedAttributeOptionIds' => $product->attributeOptions()->pluck('product_attribute_options.id')->all(),
             'mode' => 'edit',
         ]);
     }
@@ -84,10 +241,14 @@ class ProductController extends Controller
     public function update(Request $request, Product $product): RedirectResponse
     {
         $data = $this->validated($request, $product);
+        $attributeOptionIds = $data['attribute_option_ids'] ?? [];
+        unset($data['attribute_option_ids']);
         $data = $this->storeMedia($request, $data, $product);
 
         $product->update($data);
         $product->categories()->sync($request->input('categories', []));
+        $product->attributeOptions()->sync($attributeOptionIds);
+        $this->syncBrandFromAttributes($product);
 
         return redirect()
             ->route('admin.products.index', ['type' => $product->type])
@@ -160,7 +321,7 @@ class ProductController extends Controller
         ];
 
         $products = Product::query()
-            ->with('categories:id,url_key')
+            ->with(['categories:id,url_key', 'attributeOptions.attribute'])
             ->orderBy('id')
             ->get();
 
@@ -170,6 +331,8 @@ class ProductController extends Controller
             fputcsv($handle, $this->csvColumns());
 
             foreach ($products as $product) {
+                $frontendAttributes = collect($product->frontendAttributes())->keyBy('code');
+
                 fputcsv($handle, [
                     $product->name,
                     $product->sku,
@@ -181,9 +344,10 @@ class ProductController extends Controller
                     $product->visibility,
                     $product->status,
                     $product->url_key,
-                    $product->brand ?? '',
-                    implode(',', $product->sizes ?? []),
-                    implode(',', $product->flavors ?? []),
+                    collect($frontendAttributes->get('brand')['options'] ?? [])->pluck('label')->implode(',')
+                        ?: ($product->brand ?? ''),
+                    collect($frontendAttributes->get('size')['options'] ?? [])->pluck('label')->implode(','),
+                    collect($frontendAttributes->get('flavor')['options'] ?? [])->pluck('label')->implode(','),
                     $product->description ?? '',
                     $product->categories->pluck('url_key')->filter()->implode('|'),
                 ]);
@@ -317,17 +481,8 @@ class ProductController extends Controller
                 'status' => $status,
                 'url_key' => $urlKey,
                 'brand' => $row['brand'] !== '' ? $row['brand'] : null,
-                'sizes' => Product::parseOptionList($row['sizes'] ?? '', []),
-                'flavors' => Product::parseOptionList($row['flavors'] ?? '', []),
                 'description' => $row['description'] !== '' ? $row['description'] : null,
             ];
-
-            if ($payload['sizes'] === []) {
-                $payload['sizes'] = null;
-            }
-            if ($payload['flavors'] === []) {
-                $payload['flavors'] = null;
-            }
 
             try {
                 $product = Product::query()->where('sku', $sku)->first();
@@ -355,6 +510,24 @@ class ProductController extends Controller
 
                 if ($categoryIds !== []) {
                     $product->categories()->sync($categoryIds);
+                }
+
+                $optionIds = array_merge(
+                    $this->resolveAttributeOptionIds('size', Product::parseOptionList($row['sizes'] ?? '')),
+                    $this->resolveAttributeOptionIds('flavor', Product::parseOptionList($row['flavors'] ?? '')),
+                    $this->resolveAttributeOptionIds(
+                        'brand',
+                        Product::parseOptionList($row['brand'] ?? '')
+                    )
+                );
+
+                if ($optionIds !== []) {
+                    $product->attributeOptions()->syncWithoutDetaching($optionIds);
+                }
+
+                // Keep catalog brand text in sync when a brand attribute option is present.
+                if (filled($row['brand'] ?? null)) {
+                    $product->update(['brand' => $row['brand']]);
                 }
             } catch (\Throwable $e) {
                 $errors[] = "Line {$line}: ".$e->getMessage();
@@ -405,8 +578,8 @@ class ProductController extends Controller
                 Rule::unique('products', 'url_key')->ignore($product?->id),
             ],
             'brand' => ['nullable', 'string', 'max:255'],
-            'sizes' => ['nullable', 'string', 'max:1000'],
-            'flavors' => ['nullable', 'string', 'max:1000'],
+            'attribute_option_ids' => ['nullable', 'array'],
+            'attribute_option_ids.*' => ['integer', 'exists:product_attribute_options,id'],
             'thumbnail_file' => ['nullable', 'image', 'mimes:jpeg,jpg,png,webp,gif', 'max:5120'],
             'image_files' => ['nullable', 'array'],
             'image_files.*' => ['image', 'mimes:jpeg,jpg,png,webp,gif', 'max:5120'],
@@ -423,16 +596,6 @@ class ProductController extends Controller
             'categories' => ['nullable', 'array'],
             'categories.*' => ['integer', 'exists:categories,id'],
         ]);
-
-        $data['sizes'] = Product::parseOptionList($data['sizes'] ?? null, []);
-        $data['flavors'] = Product::parseOptionList($data['flavors'] ?? null, []);
-
-        if ($data['sizes'] === []) {
-            $data['sizes'] = null;
-        }
-        if ($data['flavors'] === []) {
-            $data['flavors'] = null;
-        }
 
         return $data;
     }
@@ -624,5 +787,69 @@ class ProductController extends Controller
 
                 return $options;
             });
+    }
+
+    private function attributeCatalog()
+    {
+        return ProductAttribute::query()
+            ->enabled()
+            ->with(['options' => fn ($q) => $q->enabled()->orderBy('sort_order')->orderBy('label')])
+            ->orderBy('sort_order')
+            ->orderBy('label')
+            ->get();
+    }
+
+    /**
+     * @param  array<int, string>  $labels
+     * @return array<int, int>
+     */
+    private function resolveAttributeOptionIds(string $attributeCode, array $labels): array
+    {
+        if ($labels === []) {
+            return [];
+        }
+
+        $attribute = ProductAttribute::query()->where('code', $attributeCode)->first();
+
+        if (! $attribute) {
+            return [];
+        }
+
+        $ids = [];
+
+        foreach ($labels as $label) {
+            $value = ProductAttributeOption::makeValue($label);
+            $option = $attribute->options()
+                ->where(function ($q) use ($label, $value) {
+                    $q->where('label', $label)->orWhere('value', $value)->orWhere('value', $label);
+                })
+                ->first();
+
+            if (! $option) {
+                $option = $attribute->options()->create([
+                    'label' => $label,
+                    'value' => $value,
+                    'sort_order' => (int) $attribute->options()->count(),
+                    'status' => 'enabled',
+                ]);
+            }
+
+            $ids[] = $option->id;
+        }
+
+        return $ids;
+    }
+
+    private function syncBrandFromAttributes(Product $product): void
+    {
+        $product->loadMissing('attributeOptions.attribute');
+
+        $brandOption = $product->attributeOptions->first(
+            fn ($option) => $option->attribute?->code === 'brand'
+        );
+
+        if ($brandOption && filled($brandOption->label) && ! filled($product->brand)) {
+            $product->update(['brand' => $brandOption->label]);
+        }
     }
 }

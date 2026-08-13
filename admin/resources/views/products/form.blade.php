@@ -102,34 +102,6 @@
                     @error('brand')<p class="form-error">{{ $message }}</p>@enderror
                 </div>
 
-                <div class="form-field">
-                    <label class="form-label" for="sizes">Sizes</label>
-                    <input
-                        class="form-input"
-                        id="sizes"
-                        name="sizes"
-                        type="text"
-                        value="{{ old('sizes', is_array($product->sizes) ? implode(', ', $product->sizes) : '') }}"
-                        placeholder="500g, 1kg, 2kg"
-                    >
-                    <p class="form-hint">Comma-separated options for the storefront Size dropdown. Leave blank to use defaults.</p>
-                    @error('sizes')<p class="form-error">{{ $message }}</p>@enderror
-                </div>
-
-                <div class="form-field">
-                    <label class="form-label" for="flavors">Flavors</label>
-                    <input
-                        class="form-input"
-                        id="flavors"
-                        name="flavors"
-                        type="text"
-                        value="{{ old('flavors', is_array($product->flavors) ? implode(', ', $product->flavors) : '') }}"
-                        placeholder="Chocolate, Vanilla, Strawberry"
-                    >
-                    <p class="form-hint">Comma-separated options for the storefront Flavor dropdown. Leave blank to use defaults.</p>
-                    @error('flavors')<p class="form-error">{{ $message }}</p>@enderror
-                </div>
-
                 <div class="form-field full">
                     <label class="form-label">Categories</label>
                     @if ($categories->isEmpty())
@@ -158,6 +130,44 @@
                     @error('description')<p class="form-error">{{ $message }}</p>@enderror
                 </div>
             </div>
+        </section>
+
+        <section class="form-panel">
+            <h2 class="section-title">Product Attributes</h2>
+            <p class="form-hint" style="margin-bottom:1rem">
+                Select which attribute options this product offers. Dropdowns on the storefront are built only from these selections.
+                Manage attribute definitions under <a href="{{ route('admin.attributes.index') }}">Products → Attributes</a>.
+            </p>
+            @if ($attributes->isEmpty())
+                <p class="form-hint">No attributes yet. <a href="{{ route('admin.attributes.create') }}">Create Size / Flavor attributes</a>.</p>
+            @else
+                <div class="form-grid">
+                    @foreach ($attributes as $attribute)
+                        <div class="form-field full">
+                            <label class="form-label">{{ $attribute->label }} <code style="font-weight:400">({{ $attribute->code }})</code></label>
+                            @if ($attribute->options->isEmpty())
+                                <p class="form-hint">No options configured for this attribute.</p>
+                            @else
+                                <div class="checkbox-list">
+                                    @foreach ($attribute->options as $option)
+                                        <label class="checkbox-item">
+                                            <input
+                                                type="checkbox"
+                                                name="attribute_option_ids[]"
+                                                value="{{ $option->id }}"
+                                                @checked(in_array($option->id, old('attribute_option_ids', $selectedAttributeOptionIds), true))
+                                            >
+                                            {{ $option->label }}
+                                        </label>
+                                    @endforeach
+                                </div>
+                            @endif
+                        </div>
+                    @endforeach
+                </div>
+            @endif
+            @error('attribute_option_ids')<p class="form-error">{{ $message }}</p>@enderror
+            @error('attribute_option_ids.*')<p class="form-error">{{ $message }}</p>@enderror
         </section>
 
         <section class="form-panel">

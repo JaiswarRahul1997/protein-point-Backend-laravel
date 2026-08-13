@@ -2,81 +2,214 @@
 
 @section('title', $typeLabel)
 
+@php
+    $activeFilterCount = collect($filters)->filter(fn ($value) => filled($value))->count();
+    $clearUrl = route('admin.products.index', ['type' => $type]);
+@endphp
+
 @section('content')
     <header class="page-header">
         <div>
+            <p class="form-hint" style="margin:0 0 0.35rem">
+                <a href="{{ route('admin.products.index') }}">All Products</a> › {{ $typeLabel }}
+            </p>
             <h1 class="page-title">{{ $typeLabel }}</h1>
-            <p class="page-lead">Manage catalog products{{ $type ? ' of type '.$typeLabel : '' }}.</p>
+            <p class="page-lead">
+                @if ($type === 'all')
+                    View and manage products across all types.
+                @else
+                    Manage {{ strtolower($typeLabel) }} products.
+                @endif
+            </p>
         </div>
         <div class="actions">
-            <a class="btn btn-outline" href="{{ route('admin.products.csv-template') }}">Download CSV Template</a>
-            <a class="btn btn-outline" href="{{ route('admin.products.export-csv') }}">Download CSV</a>
-            <form method="POST" action="{{ route('admin.products.seed-dummy') }}" onsubmit="return confirm('Add 10 dummy products for each product type (50 total)?')">
-                @csrf
-                <button class="btn btn-outline" type="submit">Seed Dummy Products</button>
-            </form>
-            <a class="btn" href="{{ route('admin.products.create', $type ? ['type' => $type] : []) }}">Add Product</a>
+            <a class="btn btn-outline" href="{{ route('admin.products.index') }}">Back to types</a>
+            <a class="btn" href="{{ route('admin.products.create', $type === 'all' ? [] : ['type' => $type]) }}">
+                {{ $type === 'all' ? 'Add Product' : 'Add '.$typeLabel.' Product' }}
+            </a>
         </div>
     </header>
 
-    <section class="form-panel" style="margin-bottom:1.5rem">
-        <h2 class="section-title" style="margin-bottom:0.75rem">Upload Products CSV</h2>
-        <form method="POST" action="{{ route('admin.products.import-csv') }}" enctype="multipart/form-data" class="actions" style="flex-wrap:wrap">
-            @csrf
-            <input
-                class="form-input"
-                type="file"
-                name="csv_file"
-                accept=".csv,text/csv"
-                required
-                style="max-width:320px"
-            >
-            <button class="btn" type="submit">Upload CSV</button>
-            <a class="btn btn-outline" href="{{ route('admin.products.csv-template') }}">Download template</a>
-            <a class="btn btn-outline" href="{{ route('admin.products.export-csv') }}">Download current CSV</a>
+    <div class="grid-toolbar" data-grid-toolbar>
+        <button type="button" class="grid-tool-btn {{ $hasActiveFilters ? 'is-active' : '' }}" data-filter-toggle>
+            <span class="grid-tool-icon" aria-hidden="true">▾</span>
+            Filters
+            @if ($activeFilterCount > 0)
+                <span class="grid-filter-badge">{{ $activeFilterCount }}</span>
+            @endif
+        </button>
+        <button type="button" class="grid-tool-btn" data-columns-toggle>
+            <span class="grid-tool-icon" aria-hidden="true">⚙</span>
+            Columns
+        </button>
+
+        <div class="grid-columns-menu" data-columns-menu hidden>
+            <p class="grid-columns-title" data-columns-count>Columns</p>
+            <div class="grid-columns-list" data-columns-list></div>
+            <div class="grid-columns-actions">
+                <button type="button" data-columns-reset>Reset</button>
+                <button type="button" data-columns-close>Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="grid-filter-panel {{ $hasActiveFilters ? 'is-open' : '' }}" data-filter-panel @if(!$hasActiveFilters) hidden @endif>
+        <form method="GET" action="{{ route('admin.products.index', ['type' => $type]) }}">
+            <div class="grid-filter-fields">
+                <div class="grid-filter-field">
+                    <label>ID</label>
+                    <div class="grid-filter-range">
+                        <input class="form-input" type="number" name="id_from" placeholder="from" value="{{ $filters['id_from'] }}">
+                        <input class="form-input" type="number" name="id_to" placeholder="to" value="{{ $filters['id_to'] }}">
+                    </div>
+                </div>
+
+                <div class="grid-filter-field">
+                    <label for="filter-name">Name</label>
+                    <input class="form-input" id="filter-name" type="text" name="name" value="{{ $filters['name'] }}">
+                </div>
+
+                <div class="grid-filter-field">
+                    <label for="filter-type">Type</label>
+                    @if ($type === 'all')
+                        <select class="form-input" id="filter-type" name="product_type">
+                            <option value="">All Types</option>
+                            @foreach ($filterOptions['types'] as $slug => $label)
+                                <option value="{{ $slug }}" @selected($filters['product_type'] === $slug)>{{ $label }}</option>
+                            @endforeach
+                        </select>
+                    @else
+                        <input class="form-input" id="filter-type" type="text" value="{{ $typeLabel }}" disabled>
+                    @endif
+                </div>
+
+                <div class="grid-filter-field">
+                    <label for="filter-attribute-set">Attribute Set</label>
+                    <select class="form-input" id="filter-attribute-set" name="attribute_set">
+                        <option value="">Any</option>
+                        @foreach ($filterOptions['attributeSets'] as $set)
+                            <option value="{{ $set }}" @selected($filters['attribute_set'] === $set)>{{ $set }}</option>
+                        @endforeach
+                    </select>
+                </div>
+
+                <div class="grid-filter-field">
+                    <label for="filter-sku">SKU</label>
+                    <input class="form-input" id="filter-sku" type="text" name="sku" value="{{ $filters['sku'] }}">
+                </div>
+
+                <div class="grid-filter-field">
+                    <label>Price</label>
+                    <div class="grid-filter-range">
+                        <input class="form-input" type="number" step="0.01" name="price_from" placeholder="from" value="{{ $filters['price_from'] }}">
+                        <input class="form-input" type="number" step="0.01" name="price_to" placeholder="to" value="{{ $filters['price_to'] }}">
+                    </div>
+                </div>
+
+                <div class="grid-filter-field">
+                    <label for="filter-visibility">Visibility</label>
+                    <select class="form-input" id="filter-visibility" name="visibility">
+                        <option value="">Any</option>
+                        @foreach ($filterOptions['visibilities'] as $slug => $label)
+                            <option value="{{ $slug }}" @selected($filters['visibility'] === $slug)>{{ $label }}</option>
+                        @endforeach
+                    </select>
+                </div>
+
+                <div class="grid-filter-field">
+                    <label for="filter-status">Status</label>
+                    <select class="form-input" id="filter-status" name="status">
+                        <option value="">Any</option>
+                        @foreach ($filterOptions['statuses'] as $slug => $label)
+                            <option value="{{ $slug }}" @selected($filters['status'] === $slug)>{{ $label }}</option>
+                        @endforeach
+                    </select>
+                </div>
+
+                <div class="grid-filter-field">
+                    <label for="filter-stock-status">Stock Status</label>
+                    <select class="form-input" id="filter-stock-status" name="stock_status">
+                        <option value="">Any</option>
+                        @foreach ($filterOptions['stockStatuses'] as $slug => $label)
+                            <option value="{{ $slug }}" @selected($filters['stock_status'] === $slug)>{{ $label }}</option>
+                        @endforeach
+                    </select>
+                </div>
+
+                <div class="grid-filter-field">
+                    <label for="filter-url-key">URL Key</label>
+                    <input class="form-input" id="filter-url-key" type="text" name="url_key" value="{{ $filters['url_key'] }}">
+                </div>
+
+                <div class="grid-filter-field">
+                    <label for="filter-brand">Brand</label>
+                    <select class="form-input" id="filter-brand" name="brand">
+                        <option value="">Any</option>
+                        @foreach ($filterOptions['brands'] as $brand)
+                            <option value="{{ $brand }}" @selected($filters['brand'] === $brand)>{{ $brand }}</option>
+                        @endforeach
+                    </select>
+                </div>
+
+                <div class="grid-filter-field">
+                    <label>Last Updated At</label>
+                    <div class="grid-filter-range">
+                        <input class="form-input" type="date" name="updated_from" value="{{ $filters['updated_from'] }}">
+                        <input class="form-input" type="date" name="updated_to" value="{{ $filters['updated_to'] }}">
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid-filter-actions">
+                @if ($hasActiveFilters)
+                    <a class="grid-filter-cancel" href="{{ $clearUrl }}">Clear all</a>
+                @endif
+                <button class="grid-filter-cancel" type="button" data-filter-cancel>Cancel</button>
+                <button class="btn" type="submit">Apply Filters</button>
+            </div>
         </form>
-        <p class="form-hint" style="margin-top:0.75rem">
-            Columns: name, sku, type, attribute_set, stock_status, price, quantity, visibility, status, url_key, brand, sizes, flavors, description, categories.
-            Use commas for sizes/flavors (e.g. <code>500g,1kg</code>) and pipes for category URL keys (e.g. <code>whey|creatine</code>). Matching is by SKU.
-        </p>
-        @error('csv_file')
-            <p class="form-error" style="margin-top:0.75rem">{{ $message }}</p>
-        @enderror
-    </section>
+    </div>
 
     @if ($products->isEmpty())
         <div class="empty-state">
-            <p>No products found.</p>
-            <a class="btn" href="{{ route('admin.products.create', $type ? ['type' => $type] : []) }}">Create your first product</a>
+            @if ($hasActiveFilters)
+                <p>No products match the selected filters.</p>
+                <a class="btn btn-outline" href="{{ $clearUrl }}">Clear Filters</a>
+            @else
+                <p>No products found{{ $type === 'all' ? '' : ' for '.strtolower($typeLabel) }}.</p>
+                <a class="btn" href="{{ route('admin.products.create', $type === 'all' ? [] : ['type' => $type]) }}">
+                    {{ $type === 'all' ? 'Create your first product' : 'Create your first '.strtolower($typeLabel).' product' }}
+                </a>
+            @endif
         </div>
     @else
         <div class="table-wrap">
-            <table class="data-table">
+            <table class="data-table" id="products-table" data-column-storage="admin.products.columns.{{ $type }}">
                 <thead>
                     <tr>
-                        <th>ID</th>
-                        <th>Thumbnail</th>
-                        <th>Name</th>
-                        <th>Type</th>
-                        <th>Attribute Set</th>
-                        <th>Stock Status</th>
-                        <th>Categories</th>
-                        <th>SKU</th>
-                        <th>Price</th>
-                        <th>Quantity</th>
-                        <th>Visibility</th>
-                        <th>Status</th>
-                        <th>URL Key</th>
-                        <th>Brand</th>
-                        <th>Last Updated At</th>
-                        <th>Action</th>
+                        <th data-col="id">ID</th>
+                        <th data-col="thumbnail">Thumbnail</th>
+                        <th data-col="name">Name</th>
+                        <th data-col="type">Type</th>
+                        <th data-col="attribute_set">Attribute Set</th>
+                        <th data-col="stock_status">Stock Status</th>
+                        <th data-col="categories">Categories</th>
+                        <th data-col="sku">SKU</th>
+                        <th data-col="price">Price</th>
+                        <th data-col="quantity">Quantity</th>
+                        <th data-col="visibility">Visibility</th>
+                        <th data-col="status">Status</th>
+                        <th data-col="url_key">URL Key</th>
+                        <th data-col="brand">Brand</th>
+                        <th data-col="updated_at">Last Updated At</th>
+                        <th data-col="action">Action</th>
                     </tr>
                 </thead>
                 <tbody>
                     @foreach ($products as $product)
                         <tr>
-                            <td>{{ $product->id }}</td>
-                            <td>
+                            <td data-col="id">{{ $product->id }}</td>
+                            <td data-col="thumbnail">
                                 @if ($product->thumbnailUrl())
                                     <img
                                         class="thumb"
@@ -88,20 +221,20 @@
                                     <span class="thumb-placeholder">N/A</span>
                                 @endif
                             </td>
-                            <td>{{ $product->name }}</td>
-                            <td>{{ $product->typeLabel() }}</td>
-                            <td>{{ $product->attribute_set }}</td>
-                            <td>{{ $product->stockStatusLabel() }}</td>
-                            <td>{{ $product->categories->pluck('name')->join(', ') ?: '—' }}</td>
-                            <td>{{ $product->sku }}</td>
-                            <td>{{ number_format((float) $product->price, 2) }}</td>
-                            <td>{{ $product->quantity }}</td>
-                            <td>{{ $product->visibilityLabel() }}</td>
-                            <td>{{ $product->statusLabel() }}</td>
-                            <td>{{ $product->url_key }}</td>
-                            <td>{{ $product->brand ?: '—' }}</td>
-                            <td>{{ $product->updated_at?->format('Y-m-d H:i') }}</td>
-                            <td>
+                            <td data-col="name">{{ $product->name }}</td>
+                            <td data-col="type">{{ $product->typeLabel() }}</td>
+                            <td data-col="attribute_set">{{ $product->attribute_set }}</td>
+                            <td data-col="stock_status">{{ $product->stockStatusLabel() }}</td>
+                            <td data-col="categories">{{ $product->categories->pluck('name')->join(', ') ?: '—' }}</td>
+                            <td data-col="sku">{{ $product->sku }}</td>
+                            <td data-col="price">{{ number_format((float) $product->price, 2) }}</td>
+                            <td data-col="quantity">{{ $product->quantity }}</td>
+                            <td data-col="visibility">{{ $product->visibilityLabel() }}</td>
+                            <td data-col="status">{{ $product->statusLabel() }}</td>
+                            <td data-col="url_key">{{ $product->url_key }}</td>
+                            <td data-col="brand">{{ $product->brand ?: '—' }}</td>
+                            <td data-col="updated_at">{{ $product->updated_at?->format('Y-m-d H:i') }}</td>
+                            <td data-col="action">
                                 <div class="actions">
                                     <a class="btn btn-outline btn-sm" href="{{ route('admin.products.edit', $product) }}">Edit</a>
                                     <form method="POST" action="{{ route('admin.products.destroy', $product) }}" onsubmit="return confirm('Delete this product?')">
@@ -135,4 +268,6 @@
             @endif
         </div>
     @endif
+
+    @include('admin::partials.grid-toolbar-script')
 @endsection

@@ -3,10 +3,12 @@
 use Admin\Http\Controllers\AuthController;
 use Admin\Http\Controllers\BannerController;
 use Admin\Http\Controllers\CategoryController;
+use Admin\Http\Controllers\CustomerController;
 use Admin\Http\Controllers\DashboardController;
 use Admin\Http\Controllers\MediaController;
 use Admin\Http\Controllers\MenuController;
 use Admin\Http\Controllers\OrderController;
+use Admin\Http\Controllers\ProductAttributeController;
 use Admin\Http\Controllers\ProductController;
 use Admin\Http\Middleware\EnsureAdminAccess;
 use Illuminate\Support\Facades\Route;
@@ -25,7 +27,7 @@ Route::middleware(EnsureAdminAccess::class)->group(function () {
         ->name('admin.media');
 
     Route::get('products/{type?}', [ProductController::class, 'index'])
-        ->whereIn('type', ['simple', 'configurable', 'bundle', 'grouped', 'virtual'])
+        ->whereIn('type', ['all', 'simple', 'configurable', 'bundle', 'grouped', 'virtual'])
         ->name('admin.products.index');
     Route::post('products-manage/seed-dummy', [ProductController::class, 'seedDummy'])->name('admin.products.seed-dummy');
     Route::get('products-manage/csv-template', [ProductController::class, 'csvTemplate'])->name('admin.products.csv-template');
@@ -36,6 +38,13 @@ Route::middleware(EnsureAdminAccess::class)->group(function () {
     Route::get('products-manage/{product}/edit', [ProductController::class, 'edit'])->name('admin.products.edit');
     Route::put('products-manage/{product}', [ProductController::class, 'update'])->name('admin.products.update');
     Route::delete('products-manage/{product}', [ProductController::class, 'destroy'])->name('admin.products.destroy');
+
+    Route::get('attributes', [ProductAttributeController::class, 'index'])->name('admin.attributes.index');
+    Route::get('attributes/create', [ProductAttributeController::class, 'create'])->name('admin.attributes.create');
+    Route::post('attributes', [ProductAttributeController::class, 'store'])->name('admin.attributes.store');
+    Route::get('attributes/{attribute}/edit', [ProductAttributeController::class, 'edit'])->name('admin.attributes.edit');
+    Route::put('attributes/{attribute}', [ProductAttributeController::class, 'update'])->name('admin.attributes.update');
+    Route::delete('attributes/{attribute}', [ProductAttributeController::class, 'destroy'])->name('admin.attributes.destroy');
 
     Route::get('categories', [CategoryController::class, 'index'])->name('admin.categories.index');
     Route::get('categories/create', [CategoryController::class, 'create'])->name('admin.categories.create');
@@ -64,4 +73,10 @@ Route::middleware(EnsureAdminAccess::class)->group(function () {
     Route::get('orders', [OrderController::class, 'index'])->name('admin.orders.index');
     Route::get('orders/{order}', [OrderController::class, 'show'])->name('admin.orders.show');
     Route::put('orders/{order}/status', [OrderController::class, 'updateStatus'])->name('admin.orders.status');
+
+    Route::get('customers', [CustomerController::class, 'index'])->name('admin.customers.index');
+    Route::get('customers/{customer}', [CustomerController::class, 'show'])->name('admin.customers.show');
+    Route::post('customers/{customer}/login-as', [CustomerController::class, 'loginAs'])->name('admin.customers.login-as');
+    Route::put('customers/{customer}/status', [CustomerController::class, 'updateStatus'])->name('admin.customers.status');
+    Route::delete('customers/{customer}', [CustomerController::class, 'destroy'])->name('admin.customers.destroy');
 });

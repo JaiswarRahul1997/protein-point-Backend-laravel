@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use Admin\Models\Customer;
 use Admin\Models\Order;
 use Admin\Models\Product;
 use App\Http\Controllers\Controller;
@@ -28,12 +29,15 @@ class OrderController extends Controller
             'items.*.quantity' => ['required', 'integer', 'min:1', 'max:100'],
             'items.*.size' => ['nullable', 'string', 'max:100'],
             'items.*.flavor' => ['nullable', 'string', 'max:100'],
+            'items.*.selections' => ['nullable', 'array'],
+            'items.*.selections.*' => ['nullable', 'string', 'max:100'],
         ]);
 
         $productIds = collect($data['items'])->pluck('product_id')->unique()->all();
         $products = Product::query()
             ->whereIn('id', $productIds)
             ->where('status', 'enabled')
+            ->with(['attributeOptions.attribute'])
             ->get()
             ->keyBy('id');
 
@@ -44,6 +48,8 @@ class OrderController extends Controller
         }
 
         $order = DB::transaction(function () use ($data, $products) {
+            $customer = Customer::upsertFromCheckout($data);
+
             $lines = [];
             $subtotal = 0;
 
@@ -54,10 +60,30 @@ class OrderController extends Controller
                 $lineTotal = round($unitPrice * $quantity, 2);
                 $subtotal += $lineTotal;
 
-                $options = collect([
-                    filled($item['size'] ?? null) ? 'Size: '.$item['size'] : null,
-                    filled($item['flavor'] ?? null) ? 'Flavor: '.$item['flavor'] : null,
-                ])->filter()->implode(' · ');
+                $selections = collect($item['selections'] ?? [])
+                    ->filter(fn ($value) => filled($value))
+                    ->all();
+
+                if ($selections === []) {
+                    if (filled($item['size'] ?? null)) {
+                        $selections['size'] = $item['size'];
+                    }
+                    if (filled($item['flavor'] ?? null)) {
+                        $selections['flavor'] = $item['flavor'];
+                    }
+                }
+
+                $attributeMap = collect($product->frontendAttributes())->keyBy('code');
+                $options = collect($selections)->map(function ($value, $code) use ($attributeMap) {
+                    $attribute = $attributeMap->get($code);
+                    if (! $attribute) {
+                        return ucfirst((string) $code).': '.$value;
+                    }
+
+                    $optionLabel = collect($attribute['options'])->firstWhere('value', $value)['label'] ?? $value;
+
+                    return $attribute['label'].': '.$optionLabel;
+                })->filter()->implode(' · ');
 
                 $lines[] = [
                     'product_id' => $product->id,
@@ -71,6 +97,7 @@ class OrderController extends Controller
             }
 
             $order = Order::create([
+                'customer_id' => $customer->id,
                 'order_number' => 'PP-'.strtoupper(Str::random(8)),
                 'customer_name' => $data['customer_name'],
                 'customer_email' => $data['customer_email'],

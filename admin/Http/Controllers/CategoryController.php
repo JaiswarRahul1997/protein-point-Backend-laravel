@@ -18,8 +18,40 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class CategoryController extends Controller
 {
-    public function index(): View
+    public function index(Request $request): View
     {
+        $filters = [
+            'id_from' => $request->query('id_from'),
+            'id_to' => $request->query('id_to'),
+            'name' => $request->query('name'),
+            'url_key' => $request->query('url_key'),
+            'category_type' => $request->query('category_type'),
+            'status' => $request->query('status'),
+            'position_from' => $request->query('position_from'),
+            'position_to' => $request->query('position_to'),
+            'updated_from' => $request->query('updated_from'),
+            'updated_to' => $request->query('updated_to'),
+        ];
+
+        $hasActiveFilters = collect($filters)->contains(fn ($value) => filled($value));
+
+        if ($hasActiveFilters) {
+            $categories = Category::query()
+                ->withCount(['products', 'children'])
+                ->with('parent:id,name')
+                ->tap(fn ($q) => $this->applyCategoryFilters($q, $filters))
+                ->orderBy('position')
+                ->orderBy('name')
+                ->get();
+
+            return view('admin::categories.index', [
+                'categories' => $categories,
+                'filters' => $filters,
+                'hasActiveFilters' => true,
+                'filteredMode' => true,
+            ]);
+        }
+
         $categories = Category::query()
             ->roots()
             ->with([
@@ -34,7 +66,60 @@ class CategoryController extends Controller
             ->orderBy('name')
             ->get();
 
-        return view('admin::categories.index', compact('categories'));
+        return view('admin::categories.index', [
+            'categories' => $categories,
+            'filters' => $filters,
+            'hasActiveFilters' => false,
+            'filteredMode' => false,
+        ]);
+    }
+
+    /**
+     * @param  array<string, mixed>  $filters
+     */
+    private function applyCategoryFilters($query, array $filters): void
+    {
+        if (filled($filters['id_from']) && is_numeric($filters['id_from'])) {
+            $query->where('id', '>=', (int) $filters['id_from']);
+        }
+
+        if (filled($filters['id_to']) && is_numeric($filters['id_to'])) {
+            $query->where('id', '<=', (int) $filters['id_to']);
+        }
+
+        if (filled($filters['name'])) {
+            $query->where('name', 'ilike', '%'.$filters['name'].'%');
+        }
+
+        if (filled($filters['url_key'])) {
+            $query->where('url_key', 'ilike', '%'.$filters['url_key'].'%');
+        }
+
+        if (($filters['category_type'] ?? '') === 'category') {
+            $query->whereNull('parent_id');
+        } elseif (($filters['category_type'] ?? '') === 'subcategory') {
+            $query->whereNotNull('parent_id');
+        }
+
+        if ($filters['status'] === '1' || $filters['status'] === '0') {
+            $query->where('status', (bool) (int) $filters['status']);
+        }
+
+        if (filled($filters['position_from']) && is_numeric($filters['position_from'])) {
+            $query->where('position', '>=', (int) $filters['position_from']);
+        }
+
+        if (filled($filters['position_to']) && is_numeric($filters['position_to'])) {
+            $query->where('position', '<=', (int) $filters['position_to']);
+        }
+
+        if (filled($filters['updated_from'])) {
+            $query->whereDate('updated_at', '>=', $filters['updated_from']);
+        }
+
+        if (filled($filters['updated_to'])) {
+            $query->whereDate('updated_at', '<=', $filters['updated_to']);
+        }
     }
 
     public function create(Request $request): View

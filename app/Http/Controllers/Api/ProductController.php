@@ -21,7 +21,7 @@ class ProductController extends Controller
         }
 
         $products = Product::query()
-            ->with('categories:id,name,url_key')
+            ->with(['categories:id,name,url_key', 'attributeOptions.attribute'])
             ->where('status', 'enabled')
             ->where('visibility', '!=', 'not_visible')
             ->when($type, fn ($q) => $q->where('type', $type))
@@ -58,7 +58,7 @@ class ProductController extends Controller
     public function show(string $idOrSlug): JsonResponse
     {
         $product = Product::query()
-            ->with('categories:id,name,url_key')
+            ->with(['categories:id,name,url_key', 'attributeOptions.attribute'])
             ->where('status', 'enabled')
             ->where('visibility', '!=', 'not_visible')
             ->when(
@@ -97,8 +97,7 @@ class ProductController extends Controller
             'stock_status_label' => $product->stockStatusLabel(),
             'url_key' => $product->url_key,
             'description' => $product->description,
-            'sizes' => $product->sizeOptions(),
-            'flavors' => $product->flavorOptions(),
+            'attributes' => $product->frontendAttributes(),
             'thumbnail' => Product::publicMediaUrl($product->thumbnail),
             'images' => collect($product->images ?? [])
                 ->map(fn ($path) => Product::publicMediaUrl($path))
