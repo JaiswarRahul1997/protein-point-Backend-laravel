@@ -29,3 +29,11 @@ Route::put('/auth/profile', [\App\Http\Controllers\Api\CustomerAuthController::c
 Route::put('/auth/password', [\App\Http\Controllers\Api\CustomerAuthController::class, 'updatePassword']);
 Route::get('/auth/orders/{order}', [\App\Http\Controllers\Api\CustomerAuthController::class, 'order']);
 Route::post('/auth/impersonate', [\App\Http\Controllers\Api\CustomerAuthController::class, 'impersonate']);
+
+Route::post('/newsletter/subscribe', [\App\Http\Controllers\Api\NewsletterController::class, 'subscribe']);
+Route::post('/newsletter/confirm/email', [\App\Http\Controllers\Api\NewsletterController::class, 'confirmEmail']);
+Route::post('/newsletter/unsubscribe/email', [\App\Http\Controllers\Api\NewsletterController::class, 'unsubscribeEmail']);
+Route::post('/newsletter/unsubscribe/whatsapp', [\App\Http\Controllers\Api\NewsletterController::class, 'unsubscribeWhatsApp']);
+
+Route::get('/webhooks/whatsapp', [\App\Http\Controllers\Api\WhatsAppWebhookController::class, 'verify']);
+Route::post('/webhooks/whatsapp', [\App\Http\Controllers\Api\WhatsAppWebhookController::class, 'handle']);

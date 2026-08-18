@@ -8,6 +8,8 @@ use Admin\Http\Controllers\DashboardController;
 use Admin\Http\Controllers\MediaController;
 use Admin\Http\Controllers\MenuController;
 use Admin\Http\Controllers\OrderController;
+use Admin\Http\Controllers\NewsletterCampaignController;
+use Admin\Http\Controllers\NewsletterSubscriberController;
 use Admin\Http\Controllers\ProductAttributeController;
 use Admin\Http\Controllers\ProductController;
 use Admin\Http\Middleware\EnsureAdminAccess;
@@ -79,4 +81,16 @@ Route::middleware(EnsureAdminAccess::class)->group(function () {
     Route::post('customers/{customer}/login-as', [CustomerController::class, 'loginAs'])->name('admin.customers.login-as');
     Route::put('customers/{customer}/status', [CustomerController::class, 'updateStatus'])->name('admin.customers.status');
     Route::delete('customers/{customer}', [CustomerController::class, 'destroy'])->name('admin.customers.destroy');
+
+    Route::get('newsletter/campaigns', [NewsletterCampaignController::class, 'index'])->name('admin.newsletter.campaigns.index');
+    Route::get('newsletter/campaigns/create', [NewsletterCampaignController::class, 'create'])->name('admin.newsletter.campaigns.create');
+    Route::post('newsletter/campaigns', [NewsletterCampaignController::class, 'store'])->name('admin.newsletter.campaigns.store');
+    Route::get('newsletter/campaigns/{campaign}', [NewsletterCampaignController::class, 'show'])->name('admin.newsletter.campaigns.show');
+    Route::get('newsletter/campaigns/{campaign}/edit', [NewsletterCampaignController::class, 'edit'])->name('admin.newsletter.campaigns.edit');
+    Route::put('newsletter/campaigns/{campaign}', [NewsletterCampaignController::class, 'update'])->name('admin.newsletter.campaigns.update');
+    Route::delete('newsletter/campaigns/{campaign}', [NewsletterCampaignController::class, 'destroy'])->name('admin.newsletter.campaigns.destroy');
+    Route::post('newsletter/campaigns/{campaign}/schedule', [NewsletterCampaignController::class, 'schedule'])->name('admin.newsletter.campaigns.schedule');
+    Route::post('newsletter/campaigns/{campaign}/send', [NewsletterCampaignController::class, 'sendNow'])->name('admin.newsletter.campaigns.send');
+    Route::post('newsletter/campaigns/{campaign}/cancel', [NewsletterCampaignController::class, 'cancel'])->name('admin.newsletter.campaigns.cancel');
+    Route::get('newsletter/subscribers', [NewsletterSubscriberController::class, 'index'])->name('admin.newsletter.subscribers.index');
 });

@@ -804,6 +804,7 @@
     $menusActive = request()->routeIs('admin.menus.*');
     $ordersActive = request()->routeIs('admin.orders.*');
     $customersActive = request()->routeIs('admin.customers.*');
+    $newsletterActive = request()->routeIs('admin.newsletter.*');
 @endphp
 <div class="shell">
     <aside>
@@ -902,6 +903,27 @@
                 <ul class="nav-sub" id="customers-submenu">
                     <li>
                         <a href="{{ route('admin.customers.index') }}" class="nav-link {{ $customersActive ? 'active' : '' }}">All Customers</a>
+                    </li>
+                </ul>
+            </div>
+
+            <div class="nav-group {{ $newsletterActive ? 'is-open' : '' }}" data-nav-group>
+                <button
+                    type="button"
+                    class="nav-group-title"
+                    aria-expanded="{{ $newsletterActive ? 'true' : 'false' }}"
+                    aria-controls="newsletter-submenu"
+                    data-nav-toggle
+                >
+                    <span>Newsletter</span>
+                    <span class="nav-chevron" aria-hidden="true"></span>
+                </button>
+                <ul class="nav-sub" id="newsletter-submenu">
+                    <li>
+                        <a href="{{ route('admin.newsletter.campaigns.index') }}" class="nav-link {{ request()->routeIs('admin.newsletter.campaigns.*') ? 'active' : '' }}">Campaigns</a>
+                    </li>
+                    <li>
+                        <a href="{{ route('admin.newsletter.subscribers.index') }}" class="nav-link {{ request()->routeIs('admin.newsletter.subscribers.*') ? 'active' : '' }}">Subscribers</a>
                     </li>
                 </ul>
             </div>
