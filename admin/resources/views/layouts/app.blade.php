@@ -799,6 +799,7 @@
 <body>
 @php
     $categoriesActive = request()->routeIs('admin.categories.*');
+    $brandsActive = request()->routeIs('admin.brands.*');
     $attributesActive = request()->routeIs('admin.attributes.*');
     $bannersActive = request()->routeIs('admin.banners.*');
     $menusActive = request()->routeIs('admin.menus.*');
@@ -853,6 +854,27 @@
                 </ul>
             </div>
 
+            <div class="nav-group {{ $brandsActive ? 'is-open' : '' }}" data-nav-group>
+                <button
+                    type="button"
+                    class="nav-group-title"
+                    aria-expanded="{{ $brandsActive ? 'true' : 'false' }}"
+                    aria-controls="brands-submenu"
+                    data-nav-toggle
+                >
+                    <span>Brands</span>
+                    <span class="nav-chevron" aria-hidden="true"></span>
+                </button>
+                <ul class="nav-sub" id="brands-submenu">
+                    <li>
+                        <a href="{{ route('admin.brands.index') }}" class="nav-link {{ request()->routeIs('admin.brands.index') || request()->routeIs('admin.brands.edit') ? 'active' : '' }}">All Brands</a>
+                    </li>
+                    <li>
+                        <a href="{{ route('admin.brands.create') }}" class="nav-link {{ request()->routeIs('admin.brands.create') ? 'active' : '' }}">Add Brand</a>
+                    </li>
+                </ul>
+            </div>
+
             <div class="nav-group" data-nav-group>
                 <button
                     type="button"
@@ -884,7 +906,10 @@
                 </button>
                 <ul class="nav-sub" id="menus-submenu">
                     <li>
-                        <a href="{{ route('admin.menus.index') }}" class="nav-link {{ $menusActive ? 'active' : '' }}">All Menu Items</a>
+                        <a href="{{ route('admin.menus.index') }}" class="nav-link {{ request()->routeIs('admin.menus.*') && ! $brandsActive ? 'active' : '' }}">All Menu Items</a>
+                    </li>
+                    <li>
+                        <a href="{{ route('admin.brands.index') }}" class="nav-link {{ $brandsActive ? 'active' : '' }}">Brands</a>
                     </li>
                 </ul>
             </div>

@@ -12,6 +12,7 @@ class CategoryController extends Controller
     public function index(): JsonResponse
     {
         $categories = Category::query()
+            ->shop()
             ->where('status', true)
             ->withCount([
                 'products as products_count' => fn ($q) => $q

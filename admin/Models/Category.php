@@ -18,6 +18,7 @@ class Category extends Model
         'description',
         'image',
         'brand_logo',
+        'is_brand',
         'status',
         'position',
     ];
@@ -68,6 +69,7 @@ class Category extends Model
     {
         return [
             'status' => 'boolean',
+            'is_brand' => 'boolean',
             'position' => 'integer',
             'parent_id' => 'integer',
         ];
@@ -93,6 +95,23 @@ class Category extends Model
     public function scopeRoots(Builder $query): Builder
     {
         return $query->whereNull('parent_id');
+    }
+
+    public function scopeShop(Builder $query): Builder
+    {
+        return $query->where('is_brand', false);
+    }
+
+    public function scopeBrands(Builder $query): Builder
+    {
+        return $query->where('is_brand', true);
+    }
+
+    public function letter(): string
+    {
+        $first = strtoupper(substr(ltrim((string) $this->name), 0, 1));
+
+        return ctype_alpha($first) ? $first : '#';
     }
 
     public function isRoot(): bool

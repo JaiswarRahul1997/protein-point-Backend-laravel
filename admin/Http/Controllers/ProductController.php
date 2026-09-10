@@ -217,7 +217,7 @@ class ProductController extends Controller
         $data = $this->storeMedia($request, $data);
 
         $product = Product::create($data);
-        $product->categories()->sync($request->input('categories', []));
+        $product->categories()->sync($this->categoryIdsWithBrand($request));
         $product->attributeOptions()->sync($attributeOptionIds);
         $this->syncBrandFromAttributes($product);
 
@@ -246,7 +246,7 @@ class ProductController extends Controller
         $data = $this->storeMedia($request, $data, $product);
 
         $product->update($data);
-        $product->categories()->sync($request->input('categories', []));
+        $product->categories()->sync($this->categoryIdsWithBrand($request));
         $product->attributeOptions()->sync($attributeOptionIds);
         $this->syncBrandFromAttributes($product);
 
@@ -758,8 +758,13 @@ class ProductController extends Controller
     private function categoryOptions()
     {
         return Category::query()
+            ->shop()
             ->roots()
-            ->with(['children' => fn ($q) => $q->orderBy('position')->orderBy('name')])
+            ->with(['children' => fn ($q) => $q
+                ->shop()
+                ->with(['children' => fn ($q2) => $q2->shop()->orderBy('position')->orderBy('name')])
+                ->orderBy('position')
+                ->orderBy('name')])
             ->orderBy('position')
             ->orderBy('name')
             ->get()
@@ -838,6 +843,33 @@ class ProductController extends Controller
         }
 
         return $ids;
+    }
+
+    /**
+     * Keep shop categories from the form and also attach the matching brand category.
+     *
+     * @return array<int, int>
+     */
+    private function categoryIdsWithBrand(Request $request): array
+    {
+        $ids = collect($request->input('categories', []))
+            ->map(fn ($id) => (int) $id)
+            ->filter()
+            ->values();
+
+        $brandName = trim((string) $request->input('brand', ''));
+        if ($brandName !== '') {
+            $brandId = Category::query()
+                ->brands()
+                ->where('name', $brandName)
+                ->value('id');
+
+            if ($brandId) {
+                $ids->push((int) $brandId);
+            }
+        }
+
+        return $ids->unique()->values()->all();
     }
 
     private function syncBrandFromAttributes(Product $product): void

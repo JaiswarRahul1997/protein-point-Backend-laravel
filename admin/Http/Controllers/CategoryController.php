@@ -37,6 +37,7 @@ class CategoryController extends Controller
 
         if ($hasActiveFilters) {
             $categories = Category::query()
+                ->shop()
                 ->withCount(['products', 'children'])
                 ->with('parent:id,name')
                 ->tap(fn ($q) => $this->applyCategoryFilters($q, $filters))
@@ -53,11 +54,13 @@ class CategoryController extends Controller
         }
 
         $categories = Category::query()
+            ->shop()
             ->roots()
             ->with([
                 'children' => fn ($q) => $q
+                    ->shop()
                     ->withCount(['products', 'children'])
-                    ->with(['children' => fn ($q2) => $q2->withCount('products')->orderBy('position')->orderBy('name')])
+                    ->with(['children' => fn ($q2) => $q2->shop()->withCount('products')->orderBy('position')->orderBy('name')])
                     ->orderBy('position')
                     ->orderBy('name'),
             ])
@@ -278,6 +281,7 @@ class CategoryController extends Controller
         ];
 
         $categories = Category::query()
+            ->shop()
             ->with('parent:id,url_key')
             ->orderByRaw('CASE WHEN parent_id IS NULL THEN 0 ELSE 1 END')
             ->orderBy('position')
@@ -862,8 +866,9 @@ class CategoryController extends Controller
             : [];
 
         return Category::query()
+            ->shop()
             ->roots()
-            ->with(['children' => fn ($q) => $q->orderBy('position')->orderBy('name')])
+            ->with(['children' => fn ($q) => $q->shop()->orderBy('position')->orderBy('name')])
             ->orderBy('position')
             ->orderBy('name')
             ->get()

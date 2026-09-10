@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\BannerController;
+use App\Http\Controllers\Api\BrandController;
 use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\MenuController;
 use App\Http\Controllers\Api\OrderController;
@@ -17,6 +18,8 @@ Route::get('/health', function () {
 Route::get('/products', [ProductController::class, 'index']);
 Route::get('/products/{idOrSlug}', [ProductController::class, 'show']);
 Route::get('/categories', [CategoryController::class, 'index']);
+Route::get('/brands', [BrandController::class, 'index']);
+Route::get('/brands/{slug}', [BrandController::class, 'show']);
 Route::get('/banners', [BannerController::class, 'index']);
 Route::get('/menus', [MenuController::class, 'index']);
 Route::post('/orders', [OrderController::class, 'store']);

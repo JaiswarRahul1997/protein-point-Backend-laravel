@@ -2,6 +2,7 @@
 
 use Admin\Http\Controllers\AuthController;
 use Admin\Http\Controllers\BannerController;
+use Admin\Http\Controllers\BrandController;
 use Admin\Http\Controllers\CategoryController;
 use Admin\Http\Controllers\CustomerController;
 use Admin\Http\Controllers\DashboardController;
@@ -57,6 +58,14 @@ Route::middleware(EnsureAdminAccess::class)->group(function () {
     Route::put('categories/{category}', [CategoryController::class, 'update'])->name('admin.categories.update');
     Route::patch('categories/{category}/toggle-status', [CategoryController::class, 'toggleStatus'])->name('admin.categories.toggle-status');
     Route::delete('categories/{category}', [CategoryController::class, 'destroy'])->name('admin.categories.destroy');
+
+    Route::get('brands', [BrandController::class, 'index'])->name('admin.brands.index');
+    Route::get('brands/create', [BrandController::class, 'create'])->name('admin.brands.create');
+    Route::post('brands', [BrandController::class, 'store'])->name('admin.brands.store');
+    Route::get('brands/{brand}/edit', [BrandController::class, 'edit'])->name('admin.brands.edit');
+    Route::put('brands/{brand}', [BrandController::class, 'update'])->name('admin.brands.update');
+    Route::patch('brands/{brand}/toggle-status', [BrandController::class, 'toggleStatus'])->name('admin.brands.toggle-status');
+    Route::delete('brands/{brand}', [BrandController::class, 'destroy'])->name('admin.brands.destroy');
 
     Route::get('banners', [BannerController::class, 'index'])->name('admin.banners.index');
     Route::get('banners/create', [BannerController::class, 'create'])->name('admin.banners.create');
